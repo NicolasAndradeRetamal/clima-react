@@ -25,6 +25,22 @@ describe('ForecastList', () => {
     expect(screen.queryByText('0°')).not.toBeInTheDocument();
   });
 
+  it('does not label tomorrow as "Hoy" when today is dropped for null data', () => {
+    const dailyMissingToday: DailyForecast = {
+      ...dailyWithNulls,
+      // Day 0 (today) has no weather code → it is dropped entirely.
+      weather_code: [null, 3, 0],
+    };
+    render(<ForecastList daily={dailyMissingToday} />);
+
+    const days = screen.getAllByRole('listitem');
+    expect(days).toHaveLength(2);
+    // The first rendered card is tomorrow: it must keep its day name.
+    expect(screen.queryByText('Hoy')).not.toBeInTheDocument();
+    // 2026-07-09 is a Thursday.
+    expect(within(days[0] as HTMLElement).getByText('jue')).toBeInTheDocument();
+  });
+
   it('renders a day with null precipitation but hides the percentage', () => {
     render(<ForecastList daily={dailyWithNulls} />);
 

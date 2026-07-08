@@ -10,6 +10,8 @@ export interface ForecastDay {
   tempMin: number;
   /** %; null when the API has no precipitation data for the day. */
   precipitationProbability: number | null;
+  /** True only for the day whose ORIGINAL API index was 0 (today). */
+  isToday: boolean;
 }
 
 /** Precipitation probability below this threshold is visual noise. */
@@ -17,11 +19,10 @@ const PRECIPITATION_DISPLAY_THRESHOLD = 20;
 
 interface ForecastDayCardProps {
   day: ForecastDay;
-  isToday: boolean;
 }
 
 /** One forecast day: row on mobile, compact vertical card on md+. */
-export function ForecastDayCard({ day, isToday }: ForecastDayCardProps) {
+export function ForecastDayCard({ day }: ForecastDayCardProps) {
   const condition = getWeatherCondition(day.weatherCode);
   const precipitation = day.precipitationProbability;
   const showPrecipitation =
@@ -30,7 +31,7 @@ export function ForecastDayCard({ day, isToday }: ForecastDayCardProps) {
   return (
     <li className="flex items-center gap-3 rounded-2xl border border-line bg-surface-raised px-4 py-3 md:flex-col md:gap-1 md:px-2 md:py-4 md:text-center">
       <span className="w-12 text-sm font-medium capitalize md:w-auto">
-        {isToday ? 'Hoy' : formatDayName(day.date)}
+        {day.isToday ? 'Hoy' : formatDayName(day.date)}
       </span>
       <WeatherIcon kind={condition.kind} isDay className="size-8 text-brand" />
       <span className="sr-only">{condition.label}</span>

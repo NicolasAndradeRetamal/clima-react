@@ -7,7 +7,10 @@ export interface Coordinates {
 }
 
 /** Fetches current weather plus the 7-day daily forecast for a location. */
-export async function fetchForecast({ latitude, longitude }: Coordinates): Promise<ForecastResponse> {
+export async function fetchForecast(
+  { latitude, longitude }: Coordinates,
+  signal?: AbortSignal,
+): Promise<ForecastResponse> {
   const params = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
@@ -18,5 +21,7 @@ export async function fetchForecast({ latitude, longitude }: Coordinates): Promi
     forecast_days: '7',
     wind_speed_unit: 'kmh',
   });
-  return fetchJson<ForecastResponse>(`${FORECAST_BASE_URL}/forecast?${params.toString()}`);
+  return fetchJson<ForecastResponse>(`${FORECAST_BASE_URL}/forecast?${params.toString()}`, {
+    signal,
+  });
 }

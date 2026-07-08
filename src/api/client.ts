@@ -33,9 +33,11 @@ function isOpenMeteoErrorBody(value: unknown): value is OpenMeteoErrorBody {
  * Fetches a URL and parses the JSON body as `T`.
  * - Network failures (offline, DNS, CORS) reject with the native `TypeError`.
  * - Non-OK responses reject with `ApiError`.
+ * - Pass TanStack Query's AbortSignal via `init.signal` so stale requests
+ *   (e.g. superseded autocomplete keystrokes) are actually cancelled.
  */
-export async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
+export async function fetchJson<T>(url: string, init?: { signal?: AbortSignal }): Promise<T> {
+  const response = await fetch(url, init);
   if (!response.ok) {
     let message = `Request failed with status ${response.status}`;
     try {

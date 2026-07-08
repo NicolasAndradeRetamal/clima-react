@@ -116,6 +116,17 @@ describe('useFavorites', () => {
     expect(result.current.favorites).toEqual([]);
   });
 
+  it('deduplicates stored favorites by id, keeping the first occurrence', () => {
+    const lima = makeCity(3, 'Lima');
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([lima, makeCity(3, 'Lima (duplicada)'), makeCity(4, 'Quito')]),
+    );
+
+    const { result } = renderHook(() => useFavorites());
+    expect(result.current.favorites.map((favorite) => favorite.name)).toEqual(['Lima', 'Quito']);
+  });
+
   it('discards stored entries with an invalid shape', () => {
     localStorage.setItem(
       STORAGE_KEY,

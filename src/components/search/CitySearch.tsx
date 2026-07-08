@@ -21,10 +21,12 @@ export function CitySearch({ onSelectCity }: CitySearchProps) {
   const trimmedQuery = debouncedQuery.trim();
   const results = data ?? [];
 
-  // New results (or an error) invalidate the highlighted option.
+  // New results (or an error) invalidate the highlighted option. Keyed on
+  // `data` (not the query): with keepPreviousData the fresh response arrives
+  // after the query changed, and the old index would point at another city.
   useEffect(() => {
     setActiveIndex(null);
-  }, [debouncedQuery, isError]);
+  }, [data, isError]);
 
   const isBusy = isDebouncing || isFetching;
   const showDropdown =

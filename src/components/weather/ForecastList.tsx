@@ -19,7 +19,9 @@ function toForecastDays(daily: DailyForecast): ForecastDay[] {
     if (weatherCode == null || tempMax == null || tempMin == null) {
       return [];
     }
-    return [{ date, weatherCode, tempMax, tempMin, precipitationProbability }];
+    // isToday comes from the ORIGINAL API index: if day 0 is dropped for
+    // missing data, tomorrow must not inherit the "Hoy" label.
+    return [{ date, weatherCode, tempMax, tempMin, precipitationProbability, isToday: index === 0 }];
   });
 }
 
@@ -37,8 +39,8 @@ export function ForecastList({ daily }: ForecastListProps) {
         Pronóstico de 7 días
       </h2>
       <ul className="mt-3 flex flex-col gap-2 md:grid md:grid-cols-7">
-        {days.map((day, index) => (
-          <ForecastDayCard key={day.date} day={day} isToday={index === 0} />
+        {days.map((day) => (
+          <ForecastDayCard key={day.date} day={day} />
         ))}
       </ul>
     </section>

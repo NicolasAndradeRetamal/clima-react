@@ -18,12 +18,14 @@ export type UseCitySearchResult = UseQueryResult<City[], Error> & {
  */
 export function useCitySearch(query: string): UseCitySearchResult {
   const debouncedQuery = useDebouncedValue(query, 300);
-  const trimmedQuery = debouncedQuery.trim();
+  // Search with the same normalization the queryKey uses, so cache key and
+  // fetched data always refer to the exact same string.
+  const normalizedQuery = debouncedQuery.trim().toLowerCase();
 
   const result = useQuery({
     queryKey: queryKeys.citySearch(debouncedQuery),
-    queryFn: () => searchCities(trimmedQuery),
-    enabled: trimmedQuery.length >= 2,
+    queryFn: ({ signal }) => searchCities(normalizedQuery, signal),
+    enabled: normalizedQuery.length >= 2,
     staleTime: Infinity,
     placeholderData: keepPreviousData,
   });

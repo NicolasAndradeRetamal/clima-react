@@ -20,7 +20,7 @@ function toCity(result: GeocodingResult): City {
  * Normalizes the API's absent `results` to an empty array; an empty array for
  * a non-empty query is the "ciudad no encontrada" state, not an error.
  */
-export async function searchCities(query: string): Promise<City[]> {
+export async function searchCities(query: string, signal?: AbortSignal): Promise<City[]> {
   const params = new URLSearchParams({
     name: query,
     count: '8',
@@ -29,6 +29,7 @@ export async function searchCities(query: string): Promise<City[]> {
   });
   const data = await fetchJson<GeocodingSearchResponse>(
     `${GEOCODING_BASE_URL}/search?${params.toString()}`,
+    { signal },
   );
   return (data.results ?? []).map(toCity);
 }

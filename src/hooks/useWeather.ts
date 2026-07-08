@@ -10,12 +10,12 @@ const WEATHER_STALE_TIME_MS = 10 * 60 * 1000; // 10 min — weather doesn't move
 export function useWeather(city: City | null): UseQueryResult<ForecastResponse, Error> {
   return useQuery({
     queryKey: city ? queryKeys.forecast(city.latitude, city.longitude) : ['forecast', 'idle'],
-    queryFn: () => {
+    queryFn: ({ signal }) => {
       if (city === null) {
         // Unreachable: the query is disabled while no city is selected.
         throw new Error('useWeather queryFn called without a selected city');
       }
-      return fetchForecast({ latitude: city.latitude, longitude: city.longitude });
+      return fetchForecast({ latitude: city.latitude, longitude: city.longitude }, signal);
     },
     enabled: city !== null,
     staleTime: WEATHER_STALE_TIME_MS,

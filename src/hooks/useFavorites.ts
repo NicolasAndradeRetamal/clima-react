@@ -31,7 +31,19 @@ function readStoredFavorites(): FavoriteCity[] {
     if (!Array.isArray(parsed)) {
       return [];
     }
-    return parsed.filter(isFavoriteCity).slice(0, MAX_FAVORITES);
+    // Dedupe by id (keep the first occurrence): hand-edited storage with
+    // duplicated ids would otherwise produce duplicate React keys.
+    const seenIds = new Set<number>();
+    return parsed
+      .filter(isFavoriteCity)
+      .filter((favorite) => {
+        if (seenIds.has(favorite.id)) {
+          return false;
+        }
+        seenIds.add(favorite.id);
+        return true;
+      })
+      .slice(0, MAX_FAVORITES);
   } catch {
     return [];
   }
