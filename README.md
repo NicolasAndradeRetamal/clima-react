@@ -16,8 +16,8 @@ backend propio, sin API keys y sin secretos.
 Despliegue automático en GitHub Pages en cada push a `main`
 (ver [Despliegue](#despliegue)).
 
-![Captura de clima-react](docs/screenshot.png)
-<!-- TODO: añadir docs/screenshot.png con una captura de la app -->
+<!-- ![Captura de clima-react](docs/screenshot.png) -->
+<!-- TODO: añadir docs/screenshot.png con una captura de la app y descomentar la línea anterior -->
 
 ## Stack
 
@@ -73,7 +73,7 @@ nada más: no hay variables de entorno ni credenciales.
 npm test
 ```
 
-47 tests con Vitest + React Testing Library. Las peticiones HTTP se
+53 tests con Vitest + React Testing Library. Las peticiones HTTP se
 interceptan con **MSW**, así que los tests ejecutan el camino real de `fetch`
 contra fixtures tipados con las mismas interfaces que la API (si el tipo y el
 fixture divergen, no compila). Se cubren: mapeo de códigos WMO, formateo
