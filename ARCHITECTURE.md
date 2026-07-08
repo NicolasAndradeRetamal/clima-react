@@ -1,47 +1,48 @@
 # ARCHITECTURE — clima-react
 
-Weather app. Portfolio project, **frontend-only**: React + TypeScript consuming the
-public Open-Meteo APIs (no API key, no own backend). This document is the contract
-for the frontend agent: folder layout, dependency versions, API contract, hook
-design, UI state handling, testing and deployment.
+Aplicación de clima. Proyecto de portafolio, **frontend-only**: React + TypeScript
+consumiendo las APIs públicas de Open-Meteo (sin API key, sin backend propio).
+Este documento es el contrato para el agente frontend: estructura de carpetas,
+versiones de dependencias, contrato de la API, diseño de hooks, manejo de estados
+de UI, testing y despliegue.
 
-Conventions (from CLAUDE.md, non-negotiable):
+Convenciones (de CLAUDE.md, no negociables):
 
-- Code, identifiers and comments in **English**; all UI texts in **Spanish**.
-- Strict TypeScript; every API response is typed.
-- Functional components with hooks; data logic lives in dedicated hooks, never inline in components.
+- Código, identificadores y comentarios en **inglés**; todos los textos de UI en **español**.
+- TypeScript estricto; toda respuesta de la API está tipada.
+- Componentes funcionales con hooks; la lógica de datos vive en hooks dedicados, nunca inline en los componentes.
 
 ---
 
-## 1. Overview and technical decisions
+## 1. Visión general y decisiones técnicas
 
-Single-page app, single view (no routing):
+Single-page app, una sola vista (sin routing):
 
-- **Search bar** with autocomplete (Open-Meteo Geocoding API, debounced).
-- **Current weather panel** for the selected city: temperature, feels-like,
-  wind, humidity, condition icon.
-- **7-day forecast** list.
-- **Favorites** strip persisted in `localStorage`; clicking a favorite selects it.
-- Visible states for loading, network error and "city not found".
+- **Barra de búsqueda** con autocompletado (Geocoding API de Open-Meteo, con debounce).
+- **Panel de clima actual** para la ciudad seleccionada: temperatura, sensación
+  térmica, viento, humedad, icono según condición.
+- Lista de **pronóstico de 7 días**.
+- Franja de **favoritas** persistida en `localStorage`; hacer clic en una favorita la selecciona.
+- Estados visibles para cargando, error de red y "ciudad no encontrada".
 
-Key decisions:
+Decisiones clave:
 
-| Decision | Choice | Why |
+| Decisión | Elección | Por qué |
 |---|---|---|
-| Routing | **None** (single view, selected city in React state) | MVP has one screen; a router adds no value. If a `/city/:id` deep link is ever wanted, add `react-router` later — nothing in this design blocks it. |
-| Server state | TanStack Query v5 only | Mandated by stack; caching, retries and status flags come free. No Redux/Zustand — the only client state is the selected city and the favorites list. |
-| Favorites persistence | Custom `useFavorites` hook over `localStorage` | Simple, testable, no extra dependency. |
-| Styling | Tailwind CSS v4 via `@tailwindcss/vite` plugin | Mandated; v4 needs no `tailwind.config` for the default setup. |
-| Icons | Domain-level `WeatherKind` enum + `<WeatherIcon kind isDay />` component | Decouples WMO codes from visuals. The **designer** (DESIGN.md) decides the actual glyphs (inline SVG set recommended; an icon library is acceptable). |
-| HTTP mocking in tests | **MSW** (Mock Service Worker) | Tests exercise the real fetch path; fixtures mirror real Open-Meteo payloads. |
-| HTTP client | Native `fetch` + tiny typed wrapper (`src/api/client.ts`) | No axios; two GET endpoints don't justify a dependency. |
+| Routing | **Ninguno** (vista única, ciudad seleccionada en estado de React) | El MVP tiene una sola pantalla; un router no aporta valor. Si algún día se quiere un deep link `/city/:id`, se añade `react-router` después — nada en este diseño lo bloquea. |
+| Estado de servidor | Solo TanStack Query v5 | Impuesto por el stack; caché, reintentos y flags de estado vienen gratis. Sin Redux/Zustand — el único estado de cliente es la ciudad seleccionada y la lista de favoritas. |
+| Persistencia de favoritas | Hook propio `useFavorites` sobre `localStorage` | Simple, testeable, sin dependencia extra. |
+| Estilos | Tailwind CSS v4 vía el plugin `@tailwindcss/vite` | Impuesto; v4 no necesita `tailwind.config` para la configuración por defecto. |
+| Iconos | Enum de dominio `WeatherKind` + componente `<WeatherIcon kind isDay />` | Desacopla los códigos WMO de lo visual. El **diseñador** (DESIGN.md) decide los glifos concretos (se recomienda un set de SVG inline; una librería de iconos es aceptable). |
+| Mock de HTTP en tests | **MSW** (Mock Service Worker) | Los tests ejercitan el camino real de `fetch`; los fixtures replican payloads reales de Open-Meteo. |
+| Cliente HTTP | `fetch` nativo + wrapper tipado mínimo (`src/api/client.ts`) | Sin axios; dos endpoints GET no justifican una dependencia. |
 
-Language note: the app requests geocoding results with `language=es` and formats
-dates with `Intl` / `toLocaleDateString('es-ES', ...)`. No i18n library.
+Nota de idioma: la app solicita los resultados de geocoding con `language=es` y
+formatea fechas con `Intl` / `toLocaleDateString('es-ES', ...)`. Sin librería de i18n.
 
 ---
 
-## 2. Folder structure
+## 2. Estructura de carpetas
 
 ```
 clima-react/
@@ -100,22 +101,22 @@ clima-react/
             └── fixtures.ts  # typed sample payloads
 ```
 
-Rules:
+Reglas:
 
-- `components/` never call `fetch` or TanStack Query directly; they consume hooks.
-- `api/` has no React imports; pure async functions, fully typed.
-- `lib/` is pure functions only (easy unit-test targets).
+- Los componentes de `components/` nunca llaman a `fetch` ni a TanStack Query directamente; consumen hooks.
+- `api/` no tiene imports de React; funciones async puras, totalmente tipadas.
+- `lib/` contiene solo funciones puras (objetivos fáciles de test unitario).
 
 ---
 
-## 3. Dependency versions
+## 3. Versiones de dependencias
 
-Latest stable as of 2026-07-08 (verified on npm). Use caret ranges in
-`package.json`; these are the versions the project is built and tested against.
+Últimas estables a fecha 2026-07-08 (verificadas en npm). Usar rangos caret en
+`package.json`; estas son las versiones contra las que el proyecto se construye y testea.
 
 **dependencies**
 
-| Package | Version |
+| Paquete | Versión |
 |---|---|
 | `react` | 19.2.7 |
 | `react-dom` | 19.2.7 |
@@ -123,7 +124,7 @@ Latest stable as of 2026-07-08 (verified on npm). Use caret ranges in
 
 **devDependencies**
 
-| Package | Version |
+| Paquete | Versión |
 |---|---|
 | `typescript` | 6.0.3 |
 | `vite` | 8.1.3 |
@@ -136,19 +137,19 @@ Latest stable as of 2026-07-08 (verified on npm). Use caret ranges in
 | `@testing-library/user-event` | 14.6.1 |
 | `jsdom` | 29.1.1 |
 | `msw` | 2.15.0 |
-| `@types/react`, `@types/react-dom` | latest matching React 19 |
+| `@types/react`, `@types/react-dom` | últimas compatibles con React 19 |
 
-`tsconfig.json` must set `"strict": true` (plus `noUncheckedIndexedAccess` — the
-forecast API returns parallel arrays, so indexed access must be checked).
+`tsconfig.json` debe fijar `"strict": true` (más `noUncheckedIndexedAccess` — la
+API de forecast devuelve arrays paralelos, así que el acceso por índice debe estar comprobado).
 
 ---
 
-## 4. Open-Meteo API contract
+## 4. Contrato de la API de Open-Meteo
 
-Both endpoints are plain GET, JSON, CORS-enabled, no auth. Base URLs as constants
-in `src/api/client.ts`.
+Ambos endpoints son GET planos, JSON, con CORS habilitado y sin autenticación.
+Las URLs base van como constantes en `src/api/client.ts`.
 
-### 4.1 Geocoding (city autocomplete)
+### 4.1 Geocoding (autocompletado de ciudad)
 
 ```
 GET https://geocoding-api.open-meteo.com/v1/search
@@ -158,7 +159,7 @@ GET https://geocoding-api.open-meteo.com/v1/search
     &format=json
 ```
 
-Response types (`src/types/geocoding.ts`):
+Tipos de la respuesta (`src/types/geocoding.ts`):
 
 ```ts
 export interface GeocodingSearchResponse {
@@ -181,10 +182,10 @@ export interface GeocodingResult {
 }
 ```
 
-`searchCities()` normalizes `results ?? []` so callers always get an array.
-An empty array with a non-empty query is the **"ciudad no encontrada"** state.
+`searchCities()` normaliza `results ?? []` para que quien la llame siempre reciba
+un array. Un array vacío con una query no vacía es el estado **"ciudad no encontrada"**.
 
-### 4.2 Forecast (current weather + 7 days)
+### 4.2 Forecast (clima actual + 7 días)
 
 ```
 GET https://api.open-meteo.com/v1/forecast
@@ -197,7 +198,7 @@ GET https://api.open-meteo.com/v1/forecast
     &wind_speed_unit=kmh
 ```
 
-Response types (`src/types/forecast.ts`):
+Tipos de la respuesta (`src/types/forecast.ts`):
 
 ```ts
 export interface ForecastResponse {
@@ -243,11 +244,11 @@ export interface DailyForecastUnits {
 }
 ```
 
-### 4.3 Errors
+### 4.3 Errores
 
-On invalid parameters Open-Meteo answers HTTP 400 with
-`{ "error": true, "reason": "..." }`. The `fetchJson` wrapper in
-`src/api/client.ts` defines:
+Ante parámetros inválidos, Open-Meteo responde HTTP 400 con
+`{ "error": true, "reason": "..." }`. El wrapper `fetchJson` de
+`src/api/client.ts` define:
 
 ```ts
 /** Non-2xx HTTP response (includes Open-Meteo's `reason` when present). */
@@ -256,15 +257,15 @@ export class ApiError extends Error {
 }
 ```
 
-- `fetch` rejecting (offline, DNS, CORS) surfaces as a `TypeError` → treated as
-  **network error** in the UI.
-- Non-OK responses throw `ApiError` → treated as unexpected API error.
-- Both are considered retryable failures by the query config (§5.4); "no results"
-  is **not** an error — it is a successful response with an empty list.
+- Un rechazo de `fetch` (offline, DNS, CORS) aflora como `TypeError` → se trata
+  como **error de red** en la UI.
+- Las respuestas no OK lanzan `ApiError` → se tratan como error inesperado de la API.
+- Ambos se consideran fallos reintentables por la configuración de queries (§5.4);
+  "sin resultados" **no** es un error — es una respuesta exitosa con lista vacía.
 
-### 4.4 WMO weather codes → condition mapping
+### 4.4 Códigos meteorológicos WMO → mapeo de condición
 
-Domain types (`src/types/weather.ts`):
+Tipos de dominio (`src/types/weather.ts`):
 
 ```ts
 export type WeatherKind =
@@ -285,11 +286,11 @@ export interface WeatherCondition {
 }
 ```
 
-Mapping implemented as a pure function in `src/lib/weatherCodes.ts`
-(`getWeatherCondition(code: number): WeatherCondition`); unknown codes fall back
-to `{ kind: 'overcast', label: 'Condición desconocida' }`.
+El mapeo se implementa como función pura en `src/lib/weatherCodes.ts`
+(`getWeatherCondition(code: number): WeatherCondition`); los códigos desconocidos
+caen de forma segura en `{ kind: 'overcast', label: 'Condición desconocida' }`.
 
-| WMO codes | `kind` | `label` (Spanish, UI text) |
+| Códigos WMO | `kind` | `label` (español, texto de UI) |
 |---|---|---|
 | 0 | `clear` | Despejado |
 | 1 | `clear` | Mayormente despejado |
@@ -306,10 +307,10 @@ to `{ kind: 'overcast', label: 'Condición desconocida' }`.
 | 95 | `thunderstorm` | Tormenta |
 | 96, 99 | `thunderstorm` | Tormenta con granizo |
 
-`WeatherIcon` receives `kind` and `isDay: boolean` (day/night variants matter at
-least for `clear` and `partly-cloudy`; other kinds may share one glyph).
+`WeatherIcon` recibe `kind` e `isDay: boolean` (las variantes día/noche importan
+al menos para `clear` y `partly-cloudy`; el resto de kinds puede compartir un solo glifo).
 
-### 4.5 Domain types
+### 4.5 Tipos de dominio
 
 ```ts
 /** A selectable location, derived from GeocodingResult. */
@@ -327,16 +328,17 @@ export interface City {
 export type FavoriteCity = City;
 ```
 
-`City` is built from `GeocodingResult` in `api/geocoding.ts` (single mapping
-point). The selected `City` lives in `App` state (`useState<City | null>`).
+`City` se construye a partir de `GeocodingResult` en `api/geocoding.ts` (punto
+único de mapeo). La `City` seleccionada vive en el estado de `App`
+(`useState<City | null>`).
 
 ---
 
-## 5. Hooks design (TanStack Query)
+## 5. Diseño de hooks (TanStack Query)
 
 ### 5.1 Query keys
 
-Centralized in a `queryKeys` object (can live in `src/api/client.ts`):
+Centralizadas en un objeto `queryKeys` (puede vivir en `src/api/client.ts`):
 
 ```ts
 export const queryKeys = {
@@ -346,12 +348,12 @@ export const queryKeys = {
 };
 ```
 
-Coordinates rounded to 4 decimals so cache hits are stable.
+Las coordenadas se redondean a 4 decimales para que los aciertos de caché sean estables.
 
 ### 5.2 `useDebouncedValue<T>(value: T, delayMs = 300): T`
 
-Generic utility hook (timer in `useEffect`). Kept separate so it can be unit
-tested with fake timers and reused.
+Hook utilitario genérico (timer en `useEffect`). Se mantiene separado para poder
+testearlo de forma unitaria con fake timers y reutilizarlo.
 
 ### 5.3 `useCitySearch(query: string)`
 
@@ -359,15 +361,15 @@ tested with fake timers and reused.
 function useCitySearch(query: string): UseQueryResult<City[], Error> & { isDebouncing: boolean }
 ```
 
-- Debounces `query` internally with `useDebouncedValue(query, 300)`.
-- `enabled: debouncedQuery.trim().length >= 2` (no requests for 0–1 chars).
+- Aplica debounce a `query` internamente con `useDebouncedValue(query, 300)`.
+- `enabled: debouncedQuery.trim().length >= 2` (sin peticiones para 0–1 caracteres).
 - `queryKey: queryKeys.citySearch(debouncedQuery)`.
-- `queryFn: () => searchCities(debouncedQuery)` → returns `City[]`.
-- `staleTime: Infinity` — geocoding results for a given string don't change.
-- `placeholderData: keepPreviousData` — previous results stay visible while the
-  next keystroke's query loads (no dropdown flicker).
-- Exposes `isDebouncing` (`query !== debouncedQuery`) so the UI can show the
-  spinner as soon as the user types.
+- `queryFn: () => searchCities(debouncedQuery)` → devuelve `City[]`.
+- `staleTime: Infinity` — los resultados de geocoding para una cadena dada no cambian.
+- `placeholderData: keepPreviousData` — los resultados anteriores siguen visibles
+  mientras carga la query de la siguiente pulsación (sin parpadeo del dropdown).
+- Expone `isDebouncing` (`query !== debouncedQuery`) para que la UI pueda mostrar
+  el spinner en cuanto el usuario escribe.
 
 ### 5.4 `useWeather(city: City | null)`
 
@@ -378,13 +380,13 @@ function useWeather(city: City | null): UseQueryResult<ForecastResponse, Error>
 - `enabled: city !== null`.
 - `queryKey: queryKeys.forecast(city.latitude, city.longitude)`.
 - `queryFn: () => fetchForecast({ latitude, longitude })`.
-- `staleTime: 10 * 60 * 1000` (10 min — weather doesn't move faster).
-- `refetchOnWindowFocus: true` (default) — stale weather refreshes when the user
-  returns to the tab.
-- Components derive display data from `data.current` / `data.daily` +
-  `getWeatherCondition`; no transformation layer needed for this size.
+- `staleTime: 10 * 60 * 1000` (10 min — el clima no cambia más rápido).
+- `refetchOnWindowFocus: true` (por defecto) — el clima obsoleto se refresca
+  cuando el usuario vuelve a la pestaña.
+- Los componentes derivan los datos a mostrar de `data.current` / `data.daily` +
+  `getWeatherCondition`; no hace falta capa de transformación para este tamaño.
 
-Global `QueryClient` defaults (in `main.tsx`):
+Defaults globales del `QueryClient` (en `main.tsx`):
 
 ```ts
 new QueryClient({
@@ -399,7 +401,7 @@ new QueryClient({
 
 ### 5.5 `useFavorites()`
 
-No TanStack Query — pure client state backed by `localStorage`.
+Sin TanStack Query — estado de cliente puro respaldado por `localStorage`.
 
 ```ts
 const STORAGE_KEY = 'clima-react:favorites';
@@ -413,85 +415,86 @@ function useFavorites(): {
 }
 ```
 
-- Lazy `useState` initializer reads and `JSON.parse`s the key; any parse error
-  or invalid shape → `[]` (never crash on corrupted storage).
-- Every mutation writes back synchronously with `JSON.stringify`.
-- Stored value: `FavoriteCity[]`, deduplicated by `id`, capped at **10** entries
-  (oldest dropped) to keep the UI strip sane.
-- Cross-tab sync via the `storage` event is a nice-to-have, **not** MVP.
+- Un inicializador lazy de `useState` lee la clave y le hace `JSON.parse`;
+  cualquier error de parseo o forma inválida → `[]` (nunca romper con storage corrupto).
+- Cada mutación escribe de vuelta de forma síncrona con `JSON.stringify`.
+- Valor almacenado: `FavoriteCity[]`, deduplicado por `id`, con tope de **10**
+  entradas (se descarta la más antigua) para mantener la franja de UI razonable.
+- La sincronización entre pestañas vía el evento `storage` es un nice-to-have, **no** MVP.
 
 ---
 
-## 6. UI state handling
+## 6. Manejo de estados de UI
 
-Every remote interaction has an explicit visual state. Spanish copy is final
-wording unless DESIGN.md overrides it.
+Toda interacción remota tiene un estado visual explícito. Los textos en español
+son la redacción final salvo que DESIGN.md los sobrescriba.
 
-| Situation | Detection | UI |
+| Situación | Detección | UI |
 |---|---|---|
-| Typing, search in flight | `isDebouncing \|\| isFetching` on `useCitySearch` | Small `Spinner` inside the search input |
-| Search: no matches | `data.length === 0 && debouncedQuery.length >= 2` | `EmptyState`: "No se encontraron ciudades para «{query}»" |
-| Search: request failed | `isError` | Inline message in dropdown: "No se pudo buscar. Revisa tu conexión." |
-| Weather loading (first time) | `isPending` on `useWeather` | Skeleton/spinner over the weather panel |
-| Weather refetching | `isFetching && !isPending` | Keep data visible; subtle indicator only |
-| Weather: network/API error | `isError` | `ErrorMessage`: "No se pudo cargar el clima. Comprueba tu conexión e inténtalo de nuevo." + "Reintentar" button calling `refetch()` |
-| No city selected yet | `city === null` | `EmptyState`: "Busca una ciudad para ver el clima" |
-| No favorites | `favorites.length === 0` | `EmptyState`: "Aún no tienes ciudades favoritas" |
+| Escribiendo, búsqueda en curso | `isDebouncing \|\| isFetching` en `useCitySearch` | `Spinner` pequeño dentro del input de búsqueda |
+| Búsqueda: sin coincidencias | `data.length === 0 && debouncedQuery.length >= 2` | `EmptyState`: "No se encontraron ciudades para «{query}»" |
+| Búsqueda: petición fallida | `isError` | Mensaje inline en el dropdown: "No se pudo buscar. Revisa tu conexión." |
+| Clima cargando (primera vez) | `isPending` en `useWeather` | Skeleton/spinner sobre el panel de clima |
+| Clima refrescándose | `isFetching && !isPending` | Mantener los datos visibles; solo un indicador sutil |
+| Clima: error de red/API | `isError` | `ErrorMessage`: "No se pudo cargar el clima. Comprueba tu conexión e inténtalo de nuevo." + botón "Reintentar" que llama a `refetch()` |
+| Sin ciudad seleccionada aún | `city === null` | `EmptyState`: "Busca una ciudad para ver el clima" |
+| Sin favoritas | `favorites.length === 0` | `EmptyState`: "Aún no tienes ciudades favoritas" |
 
-Accessibility minimums: dropdown results navigable by keyboard (at least
-Enter to pick the first result), status regions with `role="status"` /
-`role="alert"`, icons with `aria-hidden` plus visible text labels.
+Mínimos de accesibilidad: resultados del dropdown navegables por teclado (al
+menos Enter para elegir el primer resultado), regiones de estado con
+`role="status"` / `role="alert"`, iconos con `aria-hidden` más etiquetas de texto visibles.
 
 ---
 
-## 7. Testing strategy (Vitest + RTL + MSW)
+## 7. Estrategia de testing (Vitest + RTL + MSW)
 
-Config: Vitest runs through `vite.config.ts` (`test` block), `environment:
-'jsdom'`, `setupFiles: ['src/test/setup.ts']`, `globals: true`.
-`setup.ts` imports `@testing-library/jest-dom/vitest` and starts/resets/stops
-the MSW node server (`beforeAll`/`afterEach`/`afterAll`).
+Configuración: Vitest corre a través de `vite.config.ts` (bloque `test`),
+`environment: 'jsdom'`, `setupFiles: ['src/test/setup.ts']`, `globals: true`.
+`setup.ts` importa `@testing-library/jest-dom/vitest` y arranca/resetea/detiene
+el servidor node de MSW (`beforeAll`/`afterEach`/`afterAll`).
 
-Mocking: **MSW** intercepts `https://geocoding-api.open-meteo.com/*` and
-`https://api.open-meteo.com/*`. Fixtures in `src/test/mocks/fixtures.ts` are
-typed with the interfaces from §4 so drift between types and fixtures fails
-compilation. Per-test overrides via `server.use(...)` simulate errors
-(`HttpResponse.error()` for network failure, 400 JSON for API errors) and empty
-results. `localStorage` is faked per test (jsdom provides it; clear it in
-`afterEach`).
+Mocking: **MSW** intercepta `https://geocoding-api.open-meteo.com/*` y
+`https://api.open-meteo.com/*`. Los fixtures de `src/test/mocks/fixtures.ts`
+están tipados con las interfaces de §4, de modo que cualquier divergencia entre
+tipos y fixtures rompe la compilación. Overrides por test vía `server.use(...)`
+simulan errores (`HttpResponse.error()` para fallo de red, JSON 400 para errores
+de API) y resultados vacíos. `localStorage` se simula por test (jsdom lo
+provee; se limpia en `afterEach`).
 
-Test helper `renderWithQueryClient` wraps components in a fresh `QueryClient`
-per test with `retry: false` to keep error tests fast.
+El helper de test `renderWithQueryClient` envuelve los componentes en un
+`QueryClient` nuevo por test con `retry: false` para mantener rápidos los tests de error.
 
-What gets tested (priority order):
+Qué se testea (en orden de prioridad):
 
-1. **`lib/weatherCodes.ts`** (unit): representative code from each group maps to
-   the right `kind` + Spanish label; unknown code falls back safely.
-2. **`lib/format.ts`** (unit): temperature rounding, wind formatting, es-ES day
-   names.
-3. **`useFavorites`** (hook, `renderHook`): add/remove/toggle, persistence to
-   `localStorage`, dedupe, cap at 10, corrupted JSON → empty list.
+1. **`lib/weatherCodes.ts`** (unitario): un código representativo de cada grupo
+   mapea al `kind` correcto + etiqueta en español; un código desconocido cae de
+   forma segura.
+2. **`lib/format.ts`** (unitario): redondeo de temperatura, formateo de viento,
+   nombres de día es-ES.
+3. **`useFavorites`** (hook, `renderHook`): añadir/quitar/toggle, persistencia en
+   `localStorage`, dedupe, tope de 10, JSON corrupto → lista vacía.
 4. **`useDebouncedValue`** (hook, fake timers).
-5. **`CitySearch` flow** (component + MSW): typing ≥2 chars shows results;
-   empty response shows "No se encontraron ciudades…"; network error shows the
-   error message; selecting a result fires the callback.
-6. **Weather panel** (component + MSW): renders current temperature,
-   feels-like, humidity, wind and 7 forecast cards from the fixture; error
-   fixture renders `ErrorMessage` and "Reintentar" triggers a refetch.
+5. **Flujo de `CitySearch`** (componente + MSW): escribir ≥2 caracteres muestra
+   resultados; respuesta vacía muestra "No se encontraron ciudades…"; error de
+   red muestra el mensaje de error; seleccionar un resultado dispara el callback.
+6. **Panel de clima** (componente + MSW): renderiza temperatura actual,
+   sensación térmica, humedad, viento y 7 tarjetas de pronóstico desde el
+   fixture; el fixture de error renderiza `ErrorMessage` y "Reintentar" dispara un refetch.
 
-Not tested: visual styling, Open-Meteo itself, exhaustive WMO codes beyond one
-per group.
+No se testea: el estilo visual, Open-Meteo en sí, ni los códigos WMO de forma
+exhaustiva más allá de uno por grupo.
 
 ---
 
-## 8. Static deployment (no Docker)
+## 8. Despliegue estático (sin Docker)
 
-- `npm run build` → `tsc -b && vite build` → static assets in `dist/`.
-  Purely static SPA; no server, no rewrites needed (no client-side routing).
-- Calls go directly from the browser to Open-Meteo (CORS is open); no proxy and
-  no environment variables/secrets are required. Base URLs are plain constants.
-- Target platform is the devops agent's call; both are trivial:
-  - **GitHub Pages**: set `base: '/clima-react/'` in `vite.config.ts` (or
-    `base: './'`) and deploy `dist/` via GitHub Actions.
-  - **Vercel/Netlify**: zero config (build command `npm run build`, output `dist`).
-- CI (GitHub Actions): `npm ci` → `tsc -b --noEmit`-equivalent type check →
-  `vitest run` → `vite build` on every push/PR.
+- `npm run build` → `tsc -b && vite build` → assets estáticos en `dist/`.
+  SPA puramente estática; sin servidor, sin rewrites (no hay routing en cliente).
+- Las llamadas van directamente del navegador a Open-Meteo (CORS abierto); no se
+  requiere proxy ni variables de entorno/secretos. Las URLs base son constantes planas.
+- La plataforma de destino la decide el agente devops; ambas son triviales:
+  - **GitHub Pages**: fijar `base: '/clima-react/'` en `vite.config.ts` (o
+    `base: './'`) y desplegar `dist/` vía GitHub Actions.
+  - **Vercel/Netlify**: cero configuración (build command `npm run build`, output `dist`).
+- CI (GitHub Actions): `npm ci` → chequeo de tipos equivalente a `tsc -b --noEmit` →
+  `vitest run` → `vite build` en cada push/PR.

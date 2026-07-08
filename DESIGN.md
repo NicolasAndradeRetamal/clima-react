@@ -1,105 +1,111 @@
 # DESIGN — clima-react
 
-Visual identity and UX specification for the weather app. This document is the
-contract for the frontend agent: design tokens (Tailwind CSS v4 `@theme`),
-layout, component specs, icon set and accessibility rules.
+Identidad visual y especificación de UX de la aplicación de clima. Este
+documento es el contrato para el agente frontend: tokens de diseño (`@theme` de
+Tailwind CSS v4), layout, especificaciones de componentes, set de iconos y
+reglas de accesibilidad.
 
-Conventions:
+Convenciones:
 
-- Document, token names and class names in **English**. All UI copy in **Spanish**
-  (copy strings in this doc are final wording; they take precedence over the
-  drafts in ARCHITECTURE.md §6 where they differ — differences are minor).
-- Tailwind CSS v4 via `@tailwindcss/vite`; tokens live in `src/index.css` under
-  `@theme`. No `tailwind.config` file.
-- Mobile first: base classes target ~360 px; scale up with `sm:` / `md:`.
+- Nombres de tokens y de clases en **inglés**. Todo el copy de UI en **español**
+  (las cadenas de copy de este documento son la redacción final; tienen
+  precedencia sobre los borradores de ARCHITECTURE.md §6 donde difieran — las
+  diferencias son menores).
+- Tailwind CSS v4 vía `@tailwindcss/vite`; los tokens viven en `src/index.css`
+  bajo `@theme`. Sin archivo `tailwind.config`.
+- Mobile first: las clases base apuntan a ~360 px; se escala con `sm:` / `md:`.
 
 ---
 
-## 1. Visual identity
+## 1. Identidad visual
 
-### 1.1 Concept
+### 1.1 Concepto
 
-Clean "sky" identity: a calm blue as the single brand color, neutral slate
-surfaces, one warm accent (amber) reserved exclusively for the favorite star.
-No gradients, no glassmorphism, no per-condition background themes — the
-weather icon and the data are the protagonists. Consistency over decoration.
+Identidad "cielo" limpia: un azul sereno como único color de marca, superficies
+slate neutras, un solo acento cálido (ámbar) reservado exclusivamente para la
+estrella de favorita. Sin degradados, sin glassmorphism, sin fondos temáticos
+por condición — el icono del clima y los datos son los protagonistas.
+Consistencia por encima de decoración.
 
-### 1.2 Color modes
+### 1.2 Modos de color
 
-**Both light and dark mode, following the system preference only (no toggle).**
+**Modo claro y oscuro, siguiendo únicamente la preferencia del sistema (sin toggle).**
 
-Justification: a toggle adds client state, persistence and UI surface for zero
-portfolio value; honoring `prefers-color-scheme` costs almost nothing because
-every semantic token is defined once with CSS `light-dark()` (supported in all
-evergreen browsers since 2024). Components use semantic utilities
-(`bg-surface`, `text-ink`, …) and never need `dark:` variants.
+Justificación: un toggle añade estado de cliente, persistencia y superficie de
+UI a cambio de cero valor de portafolio; respetar `prefers-color-scheme` cuesta
+casi nada porque cada token semántico se define una sola vez con `light-dark()`
+de CSS (soportado en todos los navegadores evergreen desde 2024). Los
+componentes usan utilidades semánticas (`bg-surface`, `text-ink`, …) y nunca
+necesitan variantes `dark:`.
 
-### 1.3 Palette (semantic tokens)
+### 1.3 Paleta (tokens semánticos)
 
-| Token | Light | Dark | Use |
+| Token | Claro | Oscuro | Uso |
 |---|---|---|---|
-| `surface` | `#f1f5f9` (slate-100) | `#0f172a` (slate-900) | Page background |
-| `surface-raised` | `#ffffff` | `#1e293b` (slate-800) | Cards, dropdown |
-| `surface-sunken` | `#e2e8f0` (slate-200) | `#334155` (slate-700) | Input bg, skeleton blocks |
-| `ink` | `#0f172a` (slate-900) | `#f1f5f9` (slate-100) | Primary text |
-| `ink-muted` | `#475569` (slate-600) | `#94a3b8` (slate-400) | Secondary text, labels |
-| `line` | `#cbd5e1` (slate-300) | `#334155` (slate-700) | Borders, dividers |
-| `brand` | `#0284c7` (sky-600) | `#38bdf8` (sky-400) | Primary actions, links, focus ring, active states |
-| `brand-strong` | `#0369a1` (sky-700) | `#7dd3fc` (sky-300) | Hover on brand elements |
-| `brand-soft` | `#e0f2fe` (sky-100) | `#082f49` (sky-950) | Selected/hover backgrounds, subtle chips |
-| `accent` | `#f59e0b` (amber-500) | `#fbbf24` (amber-400) | Favorite star (active) — nothing else |
-| `danger` | `#dc2626` (red-600) | `#f87171` (red-400) | Error text/icons |
-| `danger-soft` | `#fee2e2` (red-100) | `#450a0a` (red-950) | Error panel background |
+| `surface` | `#f1f5f9` (slate-100) | `#0f172a` (slate-900) | Fondo de página |
+| `surface-raised` | `#ffffff` | `#1e293b` (slate-800) | Tarjetas, dropdown |
+| `surface-sunken` | `#e2e8f0` (slate-200) | `#334155` (slate-700) | Fondo del input, bloques de skeleton |
+| `ink` | `#0f172a` (slate-900) | `#f1f5f9` (slate-100) | Texto principal |
+| `ink-muted` | `#475569` (slate-600) | `#94a3b8` (slate-400) | Texto secundario, etiquetas |
+| `line` | `#cbd5e1` (slate-300) | `#334155` (slate-700) | Bordes, divisores |
+| `brand` | `#0284c7` (sky-600) | `#38bdf8` (sky-400) | Acciones principales, enlaces, anillo de foco, estados activos |
+| `brand-strong` | `#0369a1` (sky-700) | `#7dd3fc` (sky-300) | Hover en elementos de marca |
+| `brand-soft` | `#e0f2fe` (sky-100) | `#082f49` (sky-950) | Fondos de seleccionado/hover, chips sutiles |
+| `accent` | `#f59e0b` (amber-500) | `#fbbf24` (amber-400) | Estrella de favorita (activa) — nada más |
+| `danger` | `#dc2626` (red-600) | `#f87171` (red-400) | Texto/iconos de error |
+| `danger-soft` | `#fee2e2` (red-100) | `#450a0a` (red-950) | Fondo del panel de error |
 
-Contrast: every text/background pair above meets WCAG AA (≥ 4.5:1 for body
-text; `ink-muted` on `surface-raised` is 7.6:1 light / 7.0:1 dark). `brand` is
-used for text only on `surface`/`surface-raised` (4.8:1 light, 8.4:1 dark),
-never on `brand-soft` for small text.
+Contraste: todos los pares texto/fondo anteriores cumplen WCAG AA (≥ 4.5:1 para
+texto de cuerpo; `ink-muted` sobre `surface-raised` es 7.6:1 en claro / 7.0:1
+en oscuro). `brand` se usa como texto solo sobre `surface`/`surface-raised`
+(4.8:1 claro, 8.4:1 oscuro), nunca sobre `brand-soft` para texto pequeño.
 
-### 1.4 Typography
+### 1.4 Tipografía
 
-**System font stack** (Tailwind's default `--font-sans`). Justification: zero
-network requests and zero dependencies for a data-first app; native system
-fonts (Segoe UI Variable, SF Pro, Roboto) are excellent at both the small
-label sizes and the 60 px hero temperature. A webfont would add load time
-without a distinctive payoff here.
+**Stack de fuentes del sistema** (el `--font-sans` por defecto de Tailwind).
+Justificación: cero peticiones de red y cero dependencias para una app centrada
+en datos; las fuentes nativas del sistema (Segoe UI Variable, SF Pro, Roboto)
+funcionan de maravilla tanto en los tamaños pequeños de etiqueta como en la
+temperatura hero de 60 px. Una webfont añadiría tiempo de carga sin un
+beneficio distintivo aquí.
 
-Rules:
+Reglas:
 
-- All numeric weather data uses `tabular-nums` so digits don't shift when
-  values change (temperatures, wind, humidity, percentages).
-- Type scale (Tailwind defaults, no custom sizes):
+- Todos los datos meteorológicos numéricos usan `tabular-nums` para que los
+  dígitos no se desplacen cuando cambian los valores (temperaturas, viento,
+  humedad, porcentajes).
+- Escala tipográfica (defaults de Tailwind, sin tamaños custom):
 
-| Role | Classes |
+| Rol | Clases |
 |---|---|
-| Hero temperature | `text-6xl font-light tracking-tight tabular-nums` |
-| App title (header) | `text-lg font-semibold` |
-| Section heading ("Pronóstico de 7 días") | `text-sm font-semibold text-ink-muted uppercase tracking-wide` |
-| City name in weather card | `text-xl font-semibold` |
-| Body / condition label | `text-base` |
-| Metric values | `text-sm font-medium tabular-nums` |
-| Metric labels, day names, captions | `text-xs text-ink-muted` |
+| Temperatura hero | `text-6xl font-light tracking-tight tabular-nums` |
+| Título de la app (header) | `text-lg font-semibold` |
+| Encabezado de sección ("Pronóstico de 7 días") | `text-sm font-semibold text-ink-muted uppercase tracking-wide` |
+| Nombre de ciudad en la tarjeta de clima | `text-xl font-semibold` |
+| Cuerpo / etiqueta de condición | `text-base` |
+| Valores de métricas | `text-sm font-medium tabular-nums` |
+| Etiquetas de métricas, nombres de día, leyendas | `text-xs text-ink-muted` |
 
-### 1.5 Spacing, radii, shadows
+### 1.5 Espaciado, radios, sombras
 
-- **Spacing**: Tailwind's default 4 px scale only. Rhythm: `gap-2` (8 px)
-  inside dense rows, `p-4` (16 px) card padding on mobile / `sm:p-6` on ≥640 px,
-  `space-y-6` (24 px) between page sections.
-- **Radii**: `rounded-2xl` for cards and panels, `rounded-lg` for inputs and
-  buttons, `rounded-full` for chips/pills and the spinner.
-- **Shadows**: `shadow-sm` on raised cards and `shadow-lg` on the dropdown.
-  Nothing heavier. In dark mode shadows barely read, so raised elements also
-  carry `border border-line` (light and dark) — the border does the separation
-  work in dark mode.
-- **Motion**: `transition-colors duration-150` on interactive elements;
-  `animate-pulse` for skeletons; `animate-spin` for the spinner. No entrance
-  animations.
+- **Espaciado**: solo la escala de 4 px por defecto de Tailwind. Ritmo: `gap-2`
+  (8 px) dentro de filas densas, `p-4` (16 px) de padding de tarjeta en móvil /
+  `sm:p-6` en ≥640 px, `space-y-6` (24 px) entre secciones de página.
+- **Radios**: `rounded-2xl` para tarjetas y paneles, `rounded-lg` para inputs y
+  botones, `rounded-full` para chips/pills y el spinner.
+- **Sombras**: `shadow-sm` en tarjetas elevadas y `shadow-lg` en el dropdown.
+  Nada más pesado. En modo oscuro las sombras apenas se perciben, así que los
+  elementos elevados llevan además `border border-line` (claro y oscuro) — el
+  borde hace el trabajo de separación en modo oscuro.
+- **Movimiento**: `transition-colors duration-150` en elementos interactivos;
+  `animate-pulse` para skeletons; `animate-spin` para el spinner. Sin
+  animaciones de entrada.
 
 ---
 
-## 2. Design tokens (`src/index.css`)
+## 2. Tokens de diseño (`src/index.css`)
 
-Exact file content the frontend must start from:
+Contenido exacto del archivo del que debe partir el frontend:
 
 ```css
 @import "tailwindcss";
@@ -139,12 +145,12 @@ body {
 }
 ```
 
-Usage: `bg-surface-raised`, `text-ink-muted`, `border-line`, `text-brand`,
-`ring-brand`, `bg-danger-soft`, etc. **Do not** use raw Tailwind palette
-colors (`bg-white`, `text-slate-500`, …) in components — semantic tokens only,
-so dark mode stays free.
+Uso: `bg-surface-raised`, `text-ink-muted`, `border-line`, `text-brand`,
+`ring-brand`, `bg-danger-soft`, etc. **No** usar colores crudos de la paleta de
+Tailwind (`bg-white`, `text-slate-500`, …) en componentes — solo tokens
+semánticos, para que el modo oscuro salga gratis.
 
-Global focus style (also in `index.css`):
+Estilo de foco global (también en `index.css`):
 
 ```css
 @layer base {
@@ -156,9 +162,9 @@ Global focus style (also in `index.css`):
 
 ---
 
-## 3. Layout (single view, mobile first)
+## 3. Layout (vista única, mobile first)
 
-Vertical hierarchy, one column, centered:
+Jerarquía vertical, una columna, centrada:
 
 ```
 ┌──────────────────────────────┐
@@ -177,309 +183,317 @@ Vertical hierarchy, one column, centered:
 └──────────────────────────────┘
 ```
 
-- Page shell (`App.tsx`):
-  `min-h-dvh` on body wrapper; content in
-  `mx-auto w-full max-w-3xl px-4 py-6 sm:px-6` with `space-y-6` between the
-  sections (search, favorites, weather, forecast).
+- Contenedor de página (`App.tsx`):
+  `min-h-dvh` en el wrapper del body; contenido en
+  `mx-auto w-full max-w-3xl px-4 py-6 sm:px-6` con `space-y-6` entre las
+  secciones (búsqueda, favoritas, clima, pronóstico).
 - **Header**: `flex h-14 items-center gap-2` — `WeatherIcon kind="clear" isDay`
-  at `size-6 text-brand` + title `Clima` (`text-lg font-semibold`). No nav.
-- **Favorites** sit **between search and current weather**: they are a faster
-  alternative to searching, so they belong next to the input. On mobile the
-  strip scrolls horizontally (`overflow-x-auto`); it never wraps to more than
-  one row (max 10 chips per ARCHITECTURE §5.5).
-- **Forecast grid**: mobile = vertical list (`flex flex-col gap-2`, one row per
-  day, easy to scan and tap-free); `md:` (≥768 px) = `md:grid md:grid-cols-7 md:gap-2`
-  with compact vertical day cards. `max-w-3xl` keeps 7 columns comfortable
-  (~96 px each) without ultrawide stretching.
-- The search **dropdown overlays** the content below it (`absolute` within a
-  `relative` wrapper), it never pushes layout.
+  a `size-6 text-brand` + título `Clima` (`text-lg font-semibold`). Sin nav.
+- Las **favoritas** van **entre la búsqueda y el clima actual**: son una
+  alternativa más rápida a buscar, así que pertenecen junto al input. En móvil
+  la franja hace scroll horizontal (`overflow-x-auto`); nunca se envuelve a más
+  de una fila (máximo 10 chips según ARCHITECTURE §5.5).
+- **Grid de pronóstico**: móvil = lista vertical (`flex flex-col gap-2`, una
+  fila por día, fácil de escanear y sin necesidad de tocar); `md:` (≥768 px) =
+  `md:grid md:grid-cols-7 md:gap-2` con tarjetas de día verticales compactas.
+  `max-w-3xl` mantiene cómodas las 7 columnas (~96 px cada una) sin estirarse
+  en pantallas ultrapanorámicas.
+- El **dropdown** de búsqueda **se superpone** al contenido de debajo
+  (`absolute` dentro de un wrapper `relative`), nunca empuja el layout.
 
-Breakpoints used: only `sm:` (spacing/padding bumps) and `md:` (forecast grid,
-current-card internal grid). Nothing else is needed.
+Breakpoints usados: solo `sm:` (ajustes de espaciado/padding) y `md:` (grid del
+pronóstico, grid interno de la tarjeta actual). No se necesita nada más.
 
 ---
 
-## 4. Component specs
+## 4. Especificaciones de componentes
 
-Class strings are normative; the frontend may split them into smaller
-components but must not change the visual result.
+Las cadenas de clases son normativas; el frontend puede dividirlas en
+componentes más pequeños, pero no debe cambiar el resultado visual.
 
 ### 4.1 `CitySearch` (SearchBar + dropdown)
 
-Wrapper: `relative` (dropdown anchors here). Label visually hidden:
+Wrapper: `relative` (el dropdown se ancla aquí). Label oculto visualmente:
 `<label class="sr-only" for="city-search">Buscar ciudad</label>`.
 
-**Input row** — `relative`:
+**Fila del input** — `relative`:
 
-- Magnifier icon: absolute left, `absolute left-3 top-1/2 size-5 -translate-y-1/2 text-ink-muted pointer-events-none`, `aria-hidden="true"`.
+- Icono de lupa: absoluto a la izquierda, `absolute left-3 top-1/2 size-5 -translate-y-1/2 text-ink-muted pointer-events-none`, `aria-hidden="true"`.
 - Input:
   `w-full h-12 rounded-lg border border-line bg-surface-raised pl-10 pr-10 text-base text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`
   — `placeholder="Buscar ciudad…"`, `type="text"`, `autocomplete="off"`,
-  `spellcheck="false"`. Height 48 px = comfortable touch target.
-- Inline spinner (while `isDebouncing || isFetching`): `Spinner` at
-  `absolute right-3 top-1/2 -translate-y-1/2 size-5` (see §4.6).
+  `spellcheck="false"`. Altura de 48 px = objetivo táctil cómodo.
+- Spinner inline (mientras `isDebouncing || isFetching`): `Spinner` a
+  `absolute right-3 top-1/2 -translate-y-1/2 size-5` (ver §4.6).
 
-**Dropdown panel** (`SearchResultsList`), rendered when the input has focus and
-`debouncedQuery.length >= 2`:
+**Panel del dropdown** (`SearchResultsList`), renderizado cuando el input tiene
+foco y `debouncedQuery.length >= 2`:
 
-- Container:
+- Contenedor:
   `absolute inset-x-0 top-full z-10 mt-2 max-h-80 overflow-y-auto rounded-lg border border-line bg-surface-raised shadow-lg`
-- Option row (per `City`):
+- Fila de opción (por `City`):
   `flex w-full items-center gap-3 px-4 py-3 text-left cursor-pointer`
-  — active/highlighted option gets `bg-brand-soft`; no `hover:` needed beyond
-  that (highlight follows mouse and keyboard through `aria-activedescendant`).
-  - Line 1: city name — `text-base font-medium text-ink`.
-  - Line 2: `admin1 · country` (omit `admin1` when absent) — `text-xs text-ink-muted`.
-- **No matches** (successful response, empty list): single non-interactive row
-  `px-4 py-3 text-sm text-ink-muted` with copy
+  — la opción activa/resaltada recibe `bg-brand-soft`; no hace falta `hover:`
+  más allá de eso (el resaltado sigue al ratón y al teclado a través de
+  `aria-activedescendant`).
+  - Línea 1: nombre de la ciudad — `text-base font-medium text-ink`.
+  - Línea 2: `admin1 · country` (omitir `admin1` cuando falte) — `text-xs text-ink-muted`.
+- **Sin coincidencias** (respuesta exitosa, lista vacía): una sola fila no
+  interactiva `px-4 py-3 text-sm text-ink-muted` con el copy
   `No se encontraron ciudades para «{query}»`.
-- **Search error**: single row `px-4 py-3 text-sm text-danger`, copy
-  `No se pudo buscar. Revisa tu conexión.` (uses `role="alert"`, see §6).
+- **Error de búsqueda**: una sola fila `px-4 py-3 text-sm text-danger`, copy
+  `No se pudo buscar. Revisa tu conexión.` (usa `role="alert"`, ver §6).
 
-Selecting an option fills nothing back into the input decoration-wise: clear
-the query, close the dropdown, select the city.
+Seleccionar una opción no rellena nada de vuelta en el input a nivel
+decorativo: se limpia la query, se cierra el dropdown y se selecciona la ciudad.
 
 ### 4.2 `CurrentWeatherCard`
 
-Card shell (shared by all cards):
+Estructura base de tarjeta (compartida por todas las tarjetas):
 `rounded-2xl border border-line bg-surface-raised p-4 shadow-sm sm:p-6`.
 
-Internal structure:
+Estructura interna:
 
-1. **Header row** — `flex items-start justify-between gap-2`:
-   - Left: city name `text-xl font-semibold` + below it
-     `{admin1 · }country` in `text-xs text-ink-muted`, and the condition label
-     (`WeatherCondition.label`, e.g. "Parcialmente nublado") in
+1. **Fila de cabecera** — `flex items-start justify-between gap-2`:
+   - Izquierda: nombre de ciudad `text-xl font-semibold` + debajo
+     `{admin1 · }country` en `text-xs text-ink-muted`, y la etiqueta de
+     condición (`WeatherCondition.label`, p. ej. "Parcialmente nublado") en
      `mt-1 text-sm text-ink-muted`.
-   - Right: `FavoriteToggleButton` (§4.4).
-2. **Hero row** — `mt-4 flex items-center gap-4`:
-   - `WeatherIcon kind isDay` at `size-16 text-brand` (64 px), `aria-hidden`.
-   - Temperature: `text-6xl font-light tracking-tight tabular-nums`, value
-     rounded to integer + `°` (e.g. `23°`). Feels-like directly under it:
+   - Derecha: `FavoriteToggleButton` (§4.4).
+2. **Fila hero** — `mt-4 flex items-center gap-4`:
+   - `WeatherIcon kind isDay` a `size-16 text-brand` (64 px), `aria-hidden`.
+   - Temperatura: `text-6xl font-light tracking-tight tabular-nums`, valor
+     redondeado a entero + `°` (p. ej. `23°`). Sensación térmica justo debajo:
      `text-sm text-ink-muted` — `Sensación térmica: 25°`.
-3. **Metrics row** — `mt-6 grid grid-cols-2 gap-3`:
-   two metric tiles, each
+3. **Fila de métricas** — `mt-6 grid grid-cols-2 gap-3`:
+   dos tiles de métrica, cada una
    `rounded-lg bg-surface-sunken px-3 py-2`:
-   - label `text-xs text-ink-muted` (`Viento`, `Humedad`)
-   - value `text-sm font-medium tabular-nums` (`14 km/h`, `62 %`).
+   - etiqueta `text-xs text-ink-muted` (`Viento`, `Humedad`)
+   - valor `text-sm font-medium tabular-nums` (`14 km/h`, `62 %`).
 
-Subtle refetch indicator (`isFetching && !isPending`): render the §4.6 Spinner
-at `size-4 text-ink-muted` in the header row, next to the city name, inside a
-`role="status"` span with `sr-only` text `Actualizando…`. Data stays visible.
+Indicador sutil de refetch (`isFetching && !isPending`): renderizar el Spinner
+de §4.6 a `size-4 text-ink-muted` en la fila de cabecera, junto al nombre de la
+ciudad, dentro de un span con `role="status"` y texto `sr-only`
+`Actualizando…`. Los datos permanecen visibles.
 
 ### 4.3 `ForecastList` / `ForecastDayCard`
 
-Section heading above the list: `Pronóstico de 7 días` styled
-`text-sm font-semibold text-ink-muted uppercase tracking-wide` (a real
-`<h2>`).
+Encabezado de sección sobre la lista: `Pronóstico de 7 días` con estilo
+`text-sm font-semibold text-ink-muted uppercase tracking-wide` (un `<h2>` real).
 
-List container: `flex flex-col gap-2 md:grid md:grid-cols-7`.
+Contenedor de la lista: `flex flex-col gap-2 md:grid md:grid-cols-7`.
 
-`ForecastDayCard` — one per day, **not interactive** (plain `<li>` inside a
-`<ul>`):
+`ForecastDayCard` — una por día, **no interactiva** (un `<li>` plano dentro de
+un `<ul>`):
 
-- Mobile (row layout): `flex items-center gap-3 rounded-2xl border border-line bg-surface-raised px-4 py-3 md:flex-col md:gap-1 md:px-2 md:py-4 md:text-center`
-  - Day name: index 0 → `Hoy`, else `formatDayName` es-ES short (`mié`, `jue`) —
+- Móvil (layout de fila): `flex items-center gap-3 rounded-2xl border border-line bg-surface-raised px-4 py-3 md:flex-col md:gap-1 md:px-2 md:py-4 md:text-center`
+  - Nombre del día: índice 0 → `Hoy`, si no `formatDayName` es-ES corto (`mié`, `jue`) —
     `w-12 text-sm font-medium capitalize md:w-auto`.
-  - `WeatherIcon` at `size-8 text-brand` (`aria-hidden`; the condition label is
-    provided as `sr-only` text next to it).
-  - Precipitation probability, only when ≥ 20 %: `text-xs text-brand tabular-nums`
-    (e.g. `40 %`); reserve the slot with `min-h-4` so cards align when absent.
-  - Temps, pushed right on mobile (`ml-auto md:ml-0`): max
-    `text-sm font-semibold tabular-nums` + min `text-sm text-ink-muted tabular-nums`,
-    formatted `21° / 12°` on mobile, stacked (max above min) on `md:`.
+  - `WeatherIcon` a `size-8 text-brand` (`aria-hidden`; la etiqueta de condición
+    se provee como texto `sr-only` junto a él).
+  - Probabilidad de precipitación, solo cuando ≥ 20 %: `text-xs text-brand tabular-nums`
+    (p. ej. `40 %`); reservar el hueco con `min-h-4` para que las tarjetas
+    queden alineadas cuando falte.
+  - Temperaturas, empujadas a la derecha en móvil (`ml-auto md:ml-0`): máxima
+    `text-sm font-semibold tabular-nums` + mínima `text-sm text-ink-muted tabular-nums`,
+    formateadas `21° / 12°` en móvil, apiladas (máxima sobre mínima) en `md:`.
 
 ### 4.4 `FavoritesList` / `FavoriteToggleButton`
 
-**FavoritesList** — heading `Favoritas` (visually hidden `<h2 class="sr-only">`;
-the chips are self-explanatory) + strip:
-`flex gap-2 overflow-x-auto pb-1` (padding-bottom keeps the scrollbar off the
-chips).
+**FavoritesList** — encabezado `Favoritas` (un `<h2 class="sr-only">` oculto
+visualmente; los chips se explican solos) + franja:
+`flex gap-2 overflow-x-auto pb-1` (el padding-bottom mantiene la barra de
+scroll separada de los chips).
 
-Favorite chip (button that selects the city):
+Chip de favorita (botón que selecciona la ciudad):
 `inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface-raised px-4 text-sm font-medium transition-colors hover:bg-brand-soft`
-— when the chip is the **currently selected** city:
+— cuando el chip es la ciudad **actualmente seleccionada**:
 `border-brand bg-brand-soft text-brand` + `aria-current="true"`.
-Chip label: `name` only (country in `title` attribute). Removal happens via the
-star on the weather card, not on the chip — one obvious way to do it, and it
-keeps chips as single-action targets.
+Etiqueta del chip: solo `name` (el país va en el atributo `title`). Quitar la
+favorita se hace con la estrella de la tarjeta de clima, no en el chip — una
+sola forma obvia de hacerlo, y mantiene los chips como objetivos de acción única.
 
-**Empty state**: when `favorites.length === 0`, render one line
+**Estado vacío**: cuando `favorites.length === 0`, renderizar una línea
 `text-sm text-ink-muted`: `Aún no tienes ciudades favoritas. Márcalas con la
 estrella ☆.`
 
-**FavoriteToggleButton** (lives in `CurrentWeatherCard` header):
+**FavoriteToggleButton** (vive en la cabecera de `CurrentWeatherCard`):
 `inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-brand-soft`
-with a star SVG at `size-6`:
+con un SVG de estrella a `size-6`:
 
-- Not favorite: outline star, `text-ink-muted`, `aria-pressed="false"`,
+- No favorita: estrella con contorno, `text-ink-muted`, `aria-pressed="false"`,
   `aria-label="Añadir a favoritas"`.
-- Favorite: filled star, `text-accent`, `aria-pressed="true"`,
+- Favorita: estrella rellena, `text-accent`, `aria-pressed="true"`,
   `aria-label="Quitar de favoritas"`.
 
-### 4.5 Empty / placeholder states (`EmptyState`)
+### 4.5 Estados vacíos / placeholder (`EmptyState`)
 
-Shared shape: centered column inside a card shell —
+Forma compartida: columna centrada dentro de una estructura de tarjeta —
 `flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line px-6 py-12 text-center`
-(dashed border + no fill distinguishes placeholders from real content).
-Icon at `size-10 text-ink-muted` (`aria-hidden`), message
+(el borde discontinuo sin relleno distingue los placeholders del contenido real).
+Icono a `size-10 text-ink-muted` (`aria-hidden`), mensaje
 `text-sm text-ink-muted`.
 
-- **No city selected** (replaces weather + forecast sections): magnifier icon,
-  copy `Busca una ciudad para ver el clima`.
-- Search "no results" and favorites-empty use the inline variants specified in
-  §4.1 and §4.4 (a full card would be disproportionate there).
+- **Sin ciudad seleccionada** (reemplaza las secciones de clima + pronóstico):
+  icono de lupa, copy `Busca una ciudad para ver el clima`.
+- Los estados "sin resultados" de la búsqueda y favoritas-vacías usan las
+  variantes inline especificadas en §4.1 y §4.4 (una tarjeta completa sería
+  desproporcionada ahí).
 
-### 4.6 Loading states
+### 4.6 Estados de carga
 
-**`Spinner`** — inline SVG circle:
-`animate-spin` on an `svg` with `viewBox="0 0 24 24"`, a full circle at
-`opacity-25` plus a 90° arc at full opacity, both `stroke="currentColor"
-stroke-width="2.5" fill="none"`. Size via `size-*` utility from the parent.
-Always accompanied by `role="status"` + `<span class="sr-only">Cargando…</span>`
-on its wrapper (or `aria-hidden` when a sibling status text exists).
+**`Spinner`** — círculo SVG inline:
+`animate-spin` sobre un `svg` con `viewBox="0 0 24 24"`, un círculo completo a
+`opacity-25` más un arco de 90° a opacidad plena, ambos `stroke="currentColor"
+stroke-width="2.5" fill="none"`. Tamaño vía utilidad `size-*` desde el padre.
+Siempre acompañado de `role="status"` + `<span class="sr-only">Cargando…</span>`
+en su wrapper (o `aria-hidden` cuando exista un texto de estado hermano).
 
-**Weather panel skeleton** (first load, `isPending`): mirror
-`CurrentWeatherCard` + `ForecastList` geometry with `animate-pulse` blocks of
-`rounded-lg bg-surface-sunken`:
+**Skeleton del panel de clima** (primera carga, `isPending`): replicar la
+geometría de `CurrentWeatherCard` + `ForecastList` con bloques `animate-pulse`
+de `rounded-lg bg-surface-sunken`:
 
-- Card: header bar `h-6 w-40`, hero row = circle `size-16 rounded-full` +
-  bar `h-14 w-32`, two metric tiles `h-14`.
-- Forecast: 7 rows `h-14 rounded-2xl` (mobile) / 7 columns `h-36` (`md:`).
+- Tarjeta: barra de cabecera `h-6 w-40`, fila hero = círculo `size-16 rounded-full` +
+  barra `h-14 w-32`, dos tiles de métrica `h-14`.
+- Pronóstico: 7 filas `h-14 rounded-2xl` (móvil) / 7 columnas `h-36` (`md:`).
 
-Wrap the whole skeleton region in `role="status"` with `sr-only` text
-`Cargando el clima…` and `aria-hidden` on the decorative blocks.
+Envolver toda la región del skeleton en `role="status"` con texto `sr-only`
+`Cargando el clima…` y `aria-hidden` en los bloques decorativos.
 
-### 4.7 `ErrorMessage` (weather load failure)
+### 4.7 `ErrorMessage` (fallo al cargar el clima)
 
-Card: `flex flex-col items-center gap-3 rounded-2xl border border-danger/30 bg-danger-soft px-6 py-10 text-center`, `role="alert"`.
+Tarjeta: `flex flex-col items-center gap-3 rounded-2xl border border-danger/30 bg-danger-soft px-6 py-10 text-center`, `role="alert"`.
 
-- Alert-triangle icon `size-8 text-danger` (`aria-hidden`).
+- Icono de triángulo de alerta `size-8 text-danger` (`aria-hidden`).
 - Copy `text-sm text-ink`:
   `No se pudo cargar el clima. Comprueba tu conexión e inténtalo de nuevo.`
-- Retry button (the only solid-brand button in the app):
+- Botón de reintento (el único botón sólido de marca en la app):
   `h-10 rounded-lg bg-brand px-4 text-sm font-medium text-white transition-colors hover:bg-brand-strong`
-  — label `Reintentar`, calls `refetch()`. In dark mode `text-white` on sky-400
-  is low contrast, so use `text-surface` instead of `text-white`
-  (slate-900 on sky-400 = 8.9:1): final classes use `text-surface`.
+  — etiqueta `Reintentar`, llama a `refetch()`. En modo oscuro `text-white`
+  sobre sky-400 tiene bajo contraste, así que se usa `text-surface` en lugar de
+  `text-white` (slate-900 sobre sky-400 = 8.9:1): las clases finales usan
+  `text-surface`.
 
 ---
 
-## 5. Icon set (`WeatherIcon`)
+## 5. Set de iconos (`WeatherIcon`)
 
-**Decision: hand-written inline SVG set, confirmed.** Ten kinds × two variants
-for two of them = 12 small glyphs (~15 lines of SVG each). An icon library
-(lucide, @tabler) would add a dependency and still lack coherent
-day/night weather variants; drawing them keeps the bundle at ~3 KB and
-demonstrates SVG craft — right trade-off for a portfolio frontend.
+**Decisión: set de SVG inline escrito a mano, confirmada.** Diez kinds × dos
+variantes para dos de ellos = 12 glifos pequeños (~15 líneas de SVG cada uno).
+Una librería de iconos (lucide, @tabler) añadiría una dependencia y aun así
+carecería de variantes meteorológicas día/noche coherentes; dibujarlos mantiene
+el bundle en ~3 KB y demuestra oficio con SVG — el trade-off correcto para un
+frontend de portafolio.
 
-### 5.1 SVG style guide
+### 5.1 Guía de estilo SVG
 
 - `viewBox="0 0 24 24"`, `fill="none"`, `stroke="currentColor"`,
   `stroke-width="1.75"`, `stroke-linecap="round"`, `stroke-linejoin="round"`.
-- Color always via `currentColor` (parent sets `text-brand`, `text-ink-muted`, …).
-  Exception: the sun core and the moon may use `fill="currentColor"` with no
-  stroke for visual weight; raindrops/snowflakes are stroked lines/dots.
-- No hardcoded `width`/`height` attributes — size comes from Tailwind `size-*`
-  utilities (`size-5` = 20 px search/UI, `size-8` = 32 px forecast,
-  `size-16` = 64 px hero).
-- Every `WeatherIcon` renders `aria-hidden="true"` and `focusable="false"`;
-  meaning is always conveyed by adjacent visible or `sr-only` text
-  (the `WeatherCondition.label`).
+- Color siempre vía `currentColor` (el padre pone `text-brand`, `text-ink-muted`, …).
+  Excepción: el núcleo del sol y la luna pueden usar `fill="currentColor"` sin
+  trazo para dar peso visual; las gotas de lluvia/copos de nieve son
+  líneas/puntos trazados.
+- Sin atributos `width`/`height` hardcodeados — el tamaño viene de las
+  utilidades `size-*` de Tailwind (`size-5` = 20 px búsqueda/UI, `size-8` =
+  32 px pronóstico, `size-16` = 64 px hero).
+- Todo `WeatherIcon` renderiza `aria-hidden="true"` y `focusable="false"`;
+  el significado siempre se transmite mediante texto adyacente visible o
+  `sr-only` (el `WeatherCondition.label`).
 
-### 5.2 `WeatherKind` → glyph mapping
+### 5.2 Mapeo `WeatherKind` → glifo
 
-| `kind` | `isDay=true` | `isDay=false` | Glyph description |
+| `kind` | `isDay=true` | `isDay=false` | Descripción del glifo |
 |---|---|---|---|
-| `clear` | sun | moon | Sun: filled circle r=4 + 8 short rays. Moon: filled crescent (circle masked by offset circle path). |
-| `partly-cloudy` | sun-behind-cloud | moon-behind-cloud | Small sun/moon top-left at ~60 % scale, cloud outline overlapping bottom-right. |
-| `overcast` | cloud | same | Single large cloud outline, flat base. |
-| `fog` | cloud + 2 horizontal lines below | same | Cloud raised, two staggered lines underneath. |
-| `drizzle` | cloud + 3 dots | same | Dots (tiny round-cap strokes) staggered under the cloud base. |
-| `rain` | cloud + 3 short diagonal strokes | same | Slashes ~4 px at ~70° under the cloud. |
-| `freezing-rain` | cloud + 2 diagonal strokes + 1 asterisk | same | Mixed rain/ice: two rain slashes plus one 3-stroke star. |
-| `snow` | cloud + 3 asterisks | same | Three small 3-stroke stars staggered under the cloud. |
-| `showers` | cloud + 3 long diagonal strokes | same | Like `rain` but strokes ~6 px and steeper — visibly heavier. |
-| `thunderstorm` | cloud + lightning bolt | same | Filled zig-zag bolt (`fill="currentColor"`, no stroke) under the cloud. |
+| `clear` | sol | luna | Sol: círculo relleno r=4 + 8 rayos cortos. Luna: creciente relleno (círculo enmascarado por un path de círculo desplazado). |
+| `partly-cloudy` | sol tras nube | luna tras nube | Sol/luna pequeño arriba a la izquierda a ~60 % de escala, contorno de nube solapando abajo a la derecha. |
+| `overcast` | nube | igual | Un solo contorno de nube grande, base plana. |
+| `fog` | nube + 2 líneas horizontales debajo | igual | Nube elevada, dos líneas escalonadas debajo. |
+| `drizzle` | nube + 3 puntos | igual | Puntos (trazos diminutos de extremo redondeado) escalonados bajo la base de la nube. |
+| `rain` | nube + 3 trazos diagonales cortos | igual | Trazos de ~4 px a ~70° bajo la nube. |
+| `freezing-rain` | nube + 2 trazos diagonales + 1 asterisco | igual | Lluvia/hielo mixto: dos trazos de lluvia más una estrella de 3 trazos. |
+| `snow` | nube + 3 asteriscos | igual | Tres estrellitas de 3 trazos escalonadas bajo la nube. |
+| `showers` | nube + 3 trazos diagonales largos | igual | Como `rain` pero con trazos de ~6 px y más inclinados — visiblemente más intenso. |
+| `thunderstorm` | nube + rayo | igual | Rayo en zigzag relleno (`fill="currentColor"`, sin trazo) bajo la nube. |
 
-Only `clear` and `partly-cloudy` have night variants (per ARCHITECTURE §4.4);
-all others ignore `isDay`. Reuse one `<Cloud />` path constant across the
-cloud-based glyphs to keep them visually identical.
+Solo `clear` y `partly-cloudy` tienen variante nocturna (según ARCHITECTURE
+§4.4); el resto ignora `isDay`. Reutilizar una constante de path `<Cloud />`
+en todos los glifos basados en nube para que sean visualmente idénticos.
 
-The app favicon (`public/favicon.svg`) is the `clear`/day sun glyph in
+El favicon de la app (`public/favicon.svg`) es el glifo de sol `clear`/día en
 `#0284c7`.
 
 ---
 
-## 6. Accessibility
+## 6. Accesibilidad
 
-### 6.1 Contrast and touch targets
+### 6.1 Contraste y objetivos táctiles
 
-- All token pairs meet WCAG AA (§1.3). Never place `text-brand` on
-  `bg-brand-soft` for text below 18 px.
-- Minimum interactive size 40×40 px: search input h-12, chips h-10, star
-  button size-10, retry button h-10, dropdown options py-3 (≥44 px rows).
+- Todos los pares de tokens cumplen WCAG AA (§1.3). Nunca colocar `text-brand`
+  sobre `bg-brand-soft` para texto por debajo de 18 px.
+- Tamaño interactivo mínimo 40×40 px: input de búsqueda h-12, chips h-10,
+  botón de estrella size-10, botón de reintento h-10, opciones del dropdown
+  py-3 (filas de ≥44 px).
 
-### 6.2 Focus
+### 6.2 Foco
 
-- Single global rule (§2): `outline-2 outline-offset-2 outline-brand` on
-  `:focus-visible`. Never `outline-none` without a replacement.
-- The dropdown uses `aria-activedescendant`, so DOM focus stays on the input;
-  the highlighted option gets `bg-brand-soft` as its visual focus.
+- Una sola regla global (§2): `outline-2 outline-offset-2 outline-brand` en
+  `:focus-visible`. Nunca `outline-none` sin un reemplazo.
+- El dropdown usa `aria-activedescendant`, así que el foco del DOM permanece en
+  el input; la opción resaltada recibe `bg-brand-soft` como foco visual.
 
-### 6.3 Autocomplete ARIA pattern (WAI-ARIA combobox)
+### 6.3 Patrón ARIA de autocompletado (combobox WAI-ARIA)
 
 - Input: `role="combobox"`, `aria-expanded={open}`,
   `aria-controls="city-search-listbox"`, `aria-autocomplete="list"`,
   `aria-activedescendant={activeOptionId ?? undefined}`.
-- List: `<ul id="city-search-listbox" role="listbox" aria-label="Ciudades sugeridas">`.
-- Options: `<li role="option" id={`city-option-${city.id}`} aria-selected={isActive}>`.
-- Keyboard: `ArrowDown`/`ArrowUp` move the active option (wrapping),
-  `Enter` selects the active option (or the first when none is active),
-  `Escape` closes the dropdown and clears the active option, `Tab` closes it.
-- The "no results" row is `role="status"` (not an option); the search error row
-  is `role="alert"`.
+- Lista: `<ul id="city-search-listbox" role="listbox" aria-label="Ciudades sugeridas">`.
+- Opciones: `<li role="option" id={`city-option-${city.id}`} aria-selected={isActive}>`.
+- Teclado: `ArrowDown`/`ArrowUp` mueven la opción activa (con wrap),
+  `Enter` selecciona la opción activa (o la primera cuando no hay ninguna activa),
+  `Escape` cierra el dropdown y limpia la opción activa, `Tab` lo cierra.
+- La fila de "sin resultados" es `role="status"` (no una opción); la fila de
+  error de búsqueda es `role="alert"`.
 
-### 6.4 Live regions and labels
+### 6.4 Live regions y etiquetas
 
-- Weather skeleton and refetch indicator: `role="status"` with `sr-only`
-  Spanish text (`Cargando el clima…`, `Actualizando…`).
+- Skeleton del clima e indicador de refetch: `role="status"` con texto `sr-only`
+  en español (`Cargando el clima…`, `Actualizando…`).
 - `ErrorMessage`: `role="alert"`.
-- Icons: always `aria-hidden="true"`; condition conveyed by the visible
-  `label` text (current weather) or `sr-only` text (forecast cards).
-- Star toggle uses `aria-pressed` + explicit `aria-label` (§4.4).
-- `<html lang="es">` in `index.html`; document title `Clima — pronóstico por
-  ciudad`.
+- Iconos: siempre `aria-hidden="true"`; la condición se transmite mediante el
+  texto visible del `label` (clima actual) o texto `sr-only` (tarjetas de pronóstico).
+- El toggle de estrella usa `aria-pressed` + `aria-label` explícito (§4.4).
+- `<html lang="es">` en `index.html`; título del documento `Clima — pronóstico
+  por ciudad`.
 
-### 6.5 Motion
+### 6.5 Movimiento
 
-Respect `prefers-reduced-motion`: Tailwind's `motion-reduce:animate-none` on
-`animate-pulse` skeleletons is optional (pulse is subtle), but apply
-`motion-reduce:animate-none` plus a static `opacity-50` fallback style is NOT
-required for the spinner — a spinner conveys progress and is exempt as
-essential motion. Add `motion-reduce:animate-none` only to skeletons.
+Respetar `prefers-reduced-motion`: `motion-reduce:animate-none` de Tailwind en
+los skeletons con `animate-pulse` es opcional (el pulso es sutil), pero aplicar
+`motion-reduce:animate-none` más un estilo estático de fallback `opacity-50` NO
+es necesario para el spinner — un spinner comunica progreso y está exento como
+movimiento esencial. Añadir `motion-reduce:animate-none` solo a los skeletons.
 
 ---
 
-## 7. Copy reference (final Spanish strings)
+## 7. Referencia de copy (cadenas finales en español)
 
-| Context | String |
+| Contexto | Cadena |
 |---|---|
-| Input placeholder | `Buscar ciudad…` |
-| Input label (sr-only) | `Buscar ciudad` |
-| Dropdown label | `Ciudades sugeridas` |
-| No search results | `No se encontraron ciudades para «{query}»` |
-| Search error | `No se pudo buscar. Revisa tu conexión.` |
-| No city selected | `Busca una ciudad para ver el clima` |
-| Weather error | `No se pudo cargar el clima. Comprueba tu conexión e inténtalo de nuevo.` |
-| Retry button | `Reintentar` |
-| No favorites | `Aún no tienes ciudades favoritas. Márcalas con la estrella ☆.` |
-| Add favorite (aria) | `Añadir a favoritas` |
-| Remove favorite (aria) | `Quitar de favoritas` |
-| Loading (sr-only) | `Cargando el clima…` / `Cargando…` |
-| Refetching (sr-only) | `Actualizando…` |
-| Feels like | `Sensación térmica: {t}°` |
-| Metric labels | `Viento` / `Humedad` |
-| Forecast heading | `Pronóstico de 7 días` |
-| Today | `Hoy` |
-| App title | `Clima` |
+| Placeholder del input | `Buscar ciudad…` |
+| Etiqueta del input (sr-only) | `Buscar ciudad` |
+| Etiqueta del dropdown | `Ciudades sugeridas` |
+| Sin resultados de búsqueda | `No se encontraron ciudades para «{query}»` |
+| Error de búsqueda | `No se pudo buscar. Revisa tu conexión.` |
+| Sin ciudad seleccionada | `Busca una ciudad para ver el clima` |
+| Error del clima | `No se pudo cargar el clima. Comprueba tu conexión e inténtalo de nuevo.` |
+| Botón de reintento | `Reintentar` |
+| Sin favoritas | `Aún no tienes ciudades favoritas. Márcalas con la estrella ☆.` |
+| Añadir favorita (aria) | `Añadir a favoritas` |
+| Quitar favorita (aria) | `Quitar de favoritas` |
+| Cargando (sr-only) | `Cargando el clima…` / `Cargando…` |
+| Refrescando (sr-only) | `Actualizando…` |
+| Sensación térmica | `Sensación térmica: {t}°` |
+| Etiquetas de métricas | `Viento` / `Humedad` |
+| Encabezado del pronóstico | `Pronóstico de 7 días` |
+| Hoy | `Hoy` |
+| Título de la app | `Clima` |
