@@ -29,6 +29,10 @@ export function CitySearch({ onSelectCity }: CitySearchProps) {
   const isBusy = isDebouncing || isFetching;
   const showDropdown =
     isOpen && trimmedQuery.length >= 2 && (isError || data !== undefined);
+  // The listbox <ul> only exists when SearchResultsList has options to show
+  // (its error and no-results rows are plain <p> elements), so aria-controls
+  // must reference it only while it is actually in the DOM (QA LOW-1).
+  const isListboxRendered = showDropdown && !isError && results.length > 0;
 
   const activeCity = activeIndex !== null ? results[activeIndex] : undefined;
 
@@ -90,7 +94,7 @@ export function CitySearch({ onSelectCity }: CitySearchProps) {
           type="text"
           role="combobox"
           aria-expanded={showDropdown}
-          aria-controls={LISTBOX_ID}
+          aria-controls={isListboxRendered ? LISTBOX_ID : undefined}
           aria-autocomplete="list"
           aria-activedescendant={activeCity !== undefined ? optionId(activeCity.id) : undefined}
           autoComplete="off"

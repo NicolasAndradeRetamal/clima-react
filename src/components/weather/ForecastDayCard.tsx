@@ -8,8 +8,8 @@ export interface ForecastDay {
   weatherCode: number;
   tempMax: number;
   tempMin: number;
-  /** % */
-  precipitationProbability: number;
+  /** %; null when the API has no precipitation data for the day. */
+  precipitationProbability: number | null;
 }
 
 /** Precipitation probability below this threshold is visual noise. */
@@ -23,7 +23,9 @@ interface ForecastDayCardProps {
 /** One forecast day: row on mobile, compact vertical card on md+. */
 export function ForecastDayCard({ day, isToday }: ForecastDayCardProps) {
   const condition = getWeatherCondition(day.weatherCode);
-  const showPrecipitation = day.precipitationProbability >= PRECIPITATION_DISPLAY_THRESHOLD;
+  const precipitation = day.precipitationProbability;
+  const showPrecipitation =
+    precipitation !== null && precipitation >= PRECIPITATION_DISPLAY_THRESHOLD;
 
   return (
     <li className="flex items-center gap-3 rounded-2xl border border-line bg-surface-raised px-4 py-3 md:flex-col md:gap-1 md:px-2 md:py-4 md:text-center">
@@ -33,7 +35,7 @@ export function ForecastDayCard({ day, isToday }: ForecastDayCardProps) {
       <WeatherIcon kind={condition.kind} isDay className="size-8 text-brand" />
       <span className="sr-only">{condition.label}</span>
       <span className="min-h-4 text-xs text-brand tabular-nums">
-        {showPrecipitation ? formatPercent(day.precipitationProbability) : null}
+        {showPrecipitation ? formatPercent(precipitation) : null}
       </span>
       <div className="ml-auto flex items-baseline gap-1 md:ml-0 md:flex-col md:items-center md:gap-0">
         <span className="text-sm font-semibold tabular-nums">{formatTemperature(day.tempMax)}</span>

@@ -33,15 +33,19 @@ export interface CurrentWeatherUnits {
   wind_speed_10m: string;
 }
 
-/** Parallel arrays, all of length 7 (index i = day i, index 0 = today). */
+/**
+ * Parallel arrays, all of length 7 (index i = day i, index 0 = today).
+ * Open-Meteo may emit `null` in cells without data (QA LOW-2); `time` is
+ * always a valid ISO date string.
+ */
 export interface DailyForecast {
   /** "YYYY-MM-DD" */
   time: string[];
-  weather_code: number[];
-  temperature_2m_max: number[];
-  temperature_2m_min: number[];
+  weather_code: (number | null)[];
+  temperature_2m_max: (number | null)[];
+  temperature_2m_min: (number | null)[];
   /** % */
-  precipitation_probability_max: number[];
+  precipitation_probability_max: (number | null)[];
 }
 
 export interface DailyForecastUnits {

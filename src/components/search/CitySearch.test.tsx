@@ -66,6 +66,32 @@ describe('CitySearch', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
+  it('only sets aria-controls while the listbox is rendered', async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<CitySearch onSelectCity={vi.fn()} />);
+
+    // Closed dropdown: the referenced <ul> does not exist, so no aria-controls.
+    const input = getSearchInput();
+    expect(input).not.toHaveAttribute('aria-controls');
+
+    await user.type(input, 'mad');
+    await screen.findByRole('listbox');
+    expect(input).toHaveAttribute('aria-controls', 'city-search-listbox');
+
+    await user.keyboard('{Escape}');
+    expect(input).not.toHaveAttribute('aria-controls');
+  });
+
+  it('does not set aria-controls on the "no results" row (not a listbox)', async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<CitySearch onSelectCity={vi.fn()} />);
+
+    await user.type(getSearchInput(), 'xyz');
+    await screen.findByText('No se encontraron ciudades para «xyz»');
+
+    expect(getSearchInput()).not.toHaveAttribute('aria-controls');
+  });
+
   it('shows the "no results" message for an unknown city', async () => {
     const user = userEvent.setup();
     renderWithQueryClient(<CitySearch onSelectCity={vi.fn()} />);
