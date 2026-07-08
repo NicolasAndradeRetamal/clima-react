@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  /* Surfaces */
+  --color-surface: light-dark(#f1f5f9, #0f172a);
+  --color-surface-raised: light-dark(#ffffff, #1e293b);
+  --color-surface-sunken: light-dark(#e2e8f0, #334155);
+
+  /* Text */
+  --color-ink: light-dark(#0f172a, #f1f5f9);
+  --color-ink-muted: light-dark(#475569, #94a3b8);
+
+  /* Lines */
+  --color-line: light-dark(#cbd5e1, #334155);
+
+  /* Brand */
+  --color-brand: light-dark(#0284c7, #38bdf8);
+  --color-brand-strong: light-dark(#0369a1, #7dd3fc);
+  --color-brand-soft: light-dark(#e0f2fe, #082f49);
+
+  /* Accent (favorites only) */
+  --color-accent: light-dark(#f59e0b, #fbbf24);
+
+  /* Feedback */
+  --color-danger: light-dark(#dc2626, #f87171);
+  --color-danger-soft: light-dark(#fee2e2, #450a0a);
+}
+
+:root {
+  color-scheme: light dark; /* required for light-dark() and native form styling */
+}
+
+body {
+  @apply bg-surface text-ink antialiased;
+}
+
+@layer base {
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand;
+  }
+}
