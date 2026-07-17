@@ -11,7 +11,8 @@ function setNavigatorOnLine(value: boolean): void {
 }
 
 afterEach(() => {
-  setNavigatorOnLine(true);
+  // Drop the own property so the pristine prototype getter takes over again.
+  Reflect.deleteProperty(navigator, 'onLine');
 });
 
 describe('App (geolocation integration)', () => {
