@@ -687,11 +687,25 @@ Estados (máquina de ARCHITECTURE §11.2):
 | `status` | UI |
 |---|---|
 | `unsupported` | No se renderiza nada (la búsqueda es el flujo normal; no se anuncia una carencia del navegador). |
-| `idle` | Botón secundario con icono de ubicación: `inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-line bg-surface-raised px-4 text-sm font-medium text-brand transition-colors hover:bg-brand-soft` — icono pin `size-5` (`aria-hidden`), etiqueta `Usar mi ubicación`. Mismo lenguaje de chip que las favoritas: se lee como "otra forma de elegir ubicación". Hover/focus/activo como los chips; focus con el outline global. |
-| `requesting` | El mismo botón, deshabilitado: `disabled:opacity-60 disabled:pointer-events-none`, el icono se sustituye por el `Spinner` (§4.6) a `size-4`, etiqueta `Obteniendo tu ubicación…`. El wrapper lleva `role="status"` (anuncia el cambio a lectores de pantalla). |
+| `idle` | Botón secundario con icono de ubicación: `inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-line bg-surface-raised px-4 text-sm font-medium text-brand transition-colors not-aria-disabled:hover:bg-brand-soft aria-disabled:opacity-60 aria-disabled:cursor-default` — icono pin `size-5` (`aria-hidden`), etiqueta `Usar mi ubicación`. Mismo lenguaje de chip que las favoritas: se lee como "otra forma de elegir ubicación". Hover/focus/activo como los chips; focus con el outline global. (Las variantes `aria-disabled:` van en la clase base porque el estado `requesting` reutiliza este mismo elemento, ver fila siguiente.) |
+| `requesting` | **El mismo elemento `<button>`** que en `idle` — no se desmonta ni se sustituye por otro, para que el foco de teclado sobreviva a la transición (WCAG 2.4.3). Se marca con `aria-disabled="true"` y un guard en `onClick` (retorno inmediato mientras `status === 'requesting'`); **nunca el atributo `disabled`**, que expulsaría el foco a `document.body`. Visual: mismo aspecto atenuado que el disabled del sistema vía las variantes de la clase base (`opacity-60`, cursor por defecto, sin feedback de hover); sigue enfocable y conserva el outline global de focus. El icono pin se sustituye por el `Spinner` (§4.6) a `size-4`, etiqueta `Obteniendo tu ubicación…`. El wrapper lleva `role="status"` (anuncia el cambio a lectores de pantalla). |
 | `denied` | Fila informativa, tono neutro (no es un error de la app): `flex items-center gap-2 rounded-lg bg-surface-sunken px-3 py-2 text-sm text-ink-muted` — icono de info `size-5 shrink-0` (`aria-hidden`) + texto `Permiso de ubicación denegado. Puedes buscar tu ciudad manualmente.` + botón de descarte al final (`ml-auto`): `inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-brand-soft` con icono × `size-4` y `aria-label="Descartar aviso"`. Sin botón de reintento: el permiso se gestiona en el navegador. Descartar oculta la fila para la sesión (estado local). |
 | `error` | Misma fila neutra que `denied`, texto `No se pudo obtener tu ubicación.` + botón fantasma `Reintentar`: `h-10 shrink-0 cursor-pointer rounded-lg px-3 text-sm font-medium text-brand transition-colors hover:bg-brand-soft` → `requestLocation()`. (Fantasma y no sólido: el sólido queda reservado al error de datos de §4.7.) |
 | `granted` | El banner desaparece; el panel muestra "Tu ubicación" (§9.3). |
+
+**Gestión de foco al salir de `requesting`** (el botón se desmonta y, sin
+esto, el foco caería a `document.body` — WCAG 2.4.3). Solo aplica si el foco
+estaba en el botón del banner justo antes de la transición (rastrearlo con un
+ref actualizado en `focus`/`blur` del botón); si el usuario estaba en otro
+sitio, **nunca** se le roba el foco. Destinos por estado de llegada:
+
+- `granted` → foco programático al encabezado "Tu ubicación" del panel
+  (§9.3), que lleva `tabindex="-1"` para recibirlo. Es la continuación
+  lógica: "pediste tu ubicación, aquí está".
+- `denied` → foco al botón de descarte de la fila informativa (único
+  elemento interactivo de la fila; el texto lo anuncia el `role="status"`
+  del wrapper, no hace falta enfocar el contenedor).
+- `error` → foco al botón `Reintentar` (la siguiente acción lógica).
 
 Redacción: informativa y sin culpar ("Permiso de ubicación denegado…" en vez
 de "Has denegado…"); nunca sugiere que la app esté rota, y siempre deja claro
@@ -712,7 +726,10 @@ Cuando la ubicación seleccionada viene de geolocalización
 - **Encabezado**: icono pin `size-5 text-brand` (`aria-hidden`) + `Tu ubicación`
   en el estilo de nombre de ciudad (`text-xl font-semibold`), alineados con
   `inline-flex items-center gap-1.5`. El pin es la marca visual de "esto es tu
-  posición, no una ciudad buscada".
+  posición, no una ciudad buscada". El encabezado lleva `tabindex="-1"`:
+  es el destino del foco programático al concederse el permiso (§9.1); no
+  entra en el orden de tabulación y conserva el estilo de focus global si el
+  navegador lo muestra.
 - **Sin sublínea** `admin1 · country` (no hay reverse geocoding —
   ARCHITECTURE §11.3); la etiqueta de condición sube a ocupar su lugar. No se
   muestran coordenadas crudas: ruido sin valor para el usuario.
