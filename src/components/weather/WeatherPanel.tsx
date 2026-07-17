@@ -35,6 +35,7 @@ interface WeatherContentProps {
   isRefetching: boolean;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  onLocationHeadingMount?: (heading: HTMLHeadingElement) => void;
 }
 
 /**
@@ -48,6 +49,7 @@ function WeatherContent({
   isRefetching,
   isFavorite,
   onToggleFavorite,
+  onLocationHeadingMount,
 }: WeatherContentProps) {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
 
@@ -72,6 +74,7 @@ function WeatherContent({
         isRefetching={isRefetching}
         isFavorite={isFavorite}
         onToggleFavorite={onToggleFavorite}
+        onLocationHeadingMount={onLocationHeadingMount}
       />
       <ForecastList
         daily={data.daily}
@@ -99,6 +102,8 @@ interface WeatherPanelProps {
   location: SelectedLocation | null;
   isFavorite: (cityId: number) => boolean;
   onToggleFavorite: (city: City) => void;
+  /** Forwarded to CurrentWeatherCard (focus handoff, DESIGN.md §9.3). */
+  onLocationHeadingMount?: (heading: HTMLHeadingElement) => void;
 }
 
 /**
@@ -106,7 +111,12 @@ interface WeatherPanelProps {
  * Owns the `useWeather` query and renders every remote state: empty (no
  * selection), loading, error and success.
  */
-export function WeatherPanel({ location, isFavorite, onToggleFavorite }: WeatherPanelProps) {
+export function WeatherPanel({
+  location,
+  isFavorite,
+  onToggleFavorite,
+  onLocationHeadingMount,
+}: WeatherPanelProps) {
   const coords =
     location === null ? null : { latitude: location.latitude, longitude: location.longitude };
   const { data, isPending, isError, isFetching, refetch } = useWeather(coords);
@@ -143,6 +153,7 @@ export function WeatherPanel({ location, isFavorite, onToggleFavorite }: Weather
       data={data}
       isRefetching={isFetching}
       isFavorite={city !== undefined && isFavorite(city.id)}
+      onLocationHeadingMount={onLocationHeadingMount}
       onToggleFavorite={() => {
         if (city !== undefined) {
           onToggleFavorite(city);

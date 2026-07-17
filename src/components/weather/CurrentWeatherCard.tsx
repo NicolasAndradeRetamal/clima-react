@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { formatPercent, formatTemperature, formatWind } from '../../lib/format';
 import { getWeatherCondition } from '../../lib/weatherCodes';
 import type { CurrentWeather } from '../../types/forecast';
@@ -28,6 +29,11 @@ interface CurrentWeatherCardProps {
   isRefetching: boolean;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  /**
+   * Called when the "Tu ubicación" heading mounts. It is the programmatic
+   * focus target after granting geolocation from the banner (DESIGN.md §9.3).
+   */
+  onLocationHeadingMount?: (heading: HTMLHeadingElement) => void;
 }
 
 /** Hero card: location, condition, temperature, feels-like and metric tiles. */
@@ -37,18 +43,37 @@ export function CurrentWeatherCard({
   isRefetching,
   isFavorite,
   onToggleFavorite,
+  onLocationHeadingMount,
 }: CurrentWeatherCardProps) {
   const condition = getWeatherCondition(current.weather_code);
   // Geolocation ("Tu ubicación") has no geocoding id: no favorite toggle at
   // all (not even disabled) and a pin instead of the admin/country subline.
   const isCurrentPosition = location.city === undefined;
 
+  const headingRef = useCallback(
+    (heading: HTMLHeadingElement | null) => {
+      if (heading !== null && isCurrentPosition) {
+        onLocationHeadingMount?.(heading);
+      }
+    },
+    [isCurrentPosition, onLocationHeadingMount],
+  );
+
   return (
     <section className="rounded-2xl border border-line bg-surface-raised p-4 shadow-sm sm:p-6">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="inline-flex items-center gap-1.5 text-xl font-semibold">
+            {/*
+              tabIndex -1 (only for "Tu ubicación"): receives programmatic
+              focus after the geolocation permission is granted, without
+              entering the tab order (DESIGN.md §9.3).
+            */}
+            <h2
+              ref={headingRef}
+              tabIndex={isCurrentPosition ? -1 : undefined}
+              className="inline-flex items-center gap-1.5 text-xl font-semibold"
+            >
               {isCurrentPosition && <LocationIcon className="size-5 text-brand" />}
               {location.label}
             </h2>

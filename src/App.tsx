@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GeolocationBanner } from './components/location/GeolocationBanner';
 import { CitySearch } from './components/search/CitySearch';
 import { FavoritesList } from './components/favorites/FavoritesList';
@@ -30,6 +30,27 @@ export function App() {
     setSelectedLocation(cityToLocation(city));
   }, []);
 
+  // One-shot flag (DESIGN.md §9.1): set when the permission is granted while
+  // keyboard focus was on the banner button (which unmounts), consumed when
+  // the "Tu ubicación" heading mounts and receives the focus.
+  const pendingHeadingFocus = useRef(false);
+
+  const handleGrantedFocusHandoff = useCallback(() => {
+    pendingHeadingFocus.current = true;
+  }, []);
+
+  const focusLocationHeading = useCallback((heading: HTMLHeadingElement) => {
+    if (!pendingHeadingFocus.current) {
+      return;
+    }
+    pendingHeadingFocus.current = false;
+    // If the user moved on while the forecast loaded, never steal the focus:
+    // only pick it up from <body>, where the unmounted button dropped it.
+    if (document.activeElement === document.body) {
+      heading.focus();
+    }
+  }, []);
+
   return (
     <div className="min-h-dvh">
       {!isOnline && <OfflineBanner />}
@@ -40,7 +61,11 @@ export function App() {
         </header>
         <main className="space-y-6">
           <CitySearch onSelectCity={selectCity} />
-          <GeolocationBanner status={geolocationStatus} onRequestLocation={requestLocation} />
+          <GeolocationBanner
+            status={geolocationStatus}
+            onRequestLocation={requestLocation}
+            onGrantedFocusHandoff={handleGrantedFocusHandoff}
+          />
           <FavoritesList
             favorites={favorites}
             selectedCityId={selectedLocation?.city?.id ?? null}
@@ -50,6 +75,7 @@ export function App() {
             location={selectedLocation}
             isFavorite={isFavorite}
             onToggleFavorite={toggleFavorite}
+            onLocationHeadingMount={focusLocationHeading}
           />
         </main>
       </div>

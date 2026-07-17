@@ -1,4 +1,5 @@
-import { act, screen } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { App } from './App';
 import { installGeolocationMock } from './test/mocks/geolocation';
@@ -36,6 +37,25 @@ describe('App (geolocation integration)', () => {
     expect(screen.queryByRole('button', { name: 'Quitar de favoritas' })).not.toBeInTheDocument();
     // Once granted, the banner is gone.
     expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
+  });
+
+  it('moves focus to the "Tu ubicación" heading after granting from the banner', async () => {
+    installGeolocationMock({
+      permission: 'prompt',
+      position: { latitude: 40.4165, longitude: -3.7026 },
+    });
+    const user = userEvent.setup();
+    renderWithQueryClient(<App />);
+
+    // Clicking leaves the focus on the banner button; when the permission is
+    // granted the button unmounts and the focus must land on the heading
+    // (tabindex -1) instead of falling to <body> (DESIGN.md §9.1/§9.3).
+    await user.click(await screen.findByRole('button', { name: 'Usar mi ubicación' }));
+
+    const heading = await screen.findByRole('heading', { name: 'Tu ubicación' });
+    await waitFor(() => {
+      expect(heading).toHaveFocus();
+    });
   });
 });
 
