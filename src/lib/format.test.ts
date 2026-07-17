@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatDayName, formatPercent, formatTemperature, formatWind } from './format';
+import {
+  formatDayName,
+  formatLongDayName,
+  formatPercent,
+  formatPrecipitation,
+  formatTemperature,
+  formatWind,
+} from './format';
 
 describe('formatTemperature', () => {
   it('rounds to the nearest integer and appends the degree sign', () => {
@@ -25,6 +32,28 @@ describe('formatPercent', () => {
   it('rounds and appends the percent sign', () => {
     expect(formatPercent(61.5)).toBe('62 %');
     expect(formatPercent(0)).toBe('0 %');
+  });
+});
+
+describe('formatPrecipitation', () => {
+  it('formats one decimal with an es-ES comma', () => {
+    expect(formatPrecipitation(1.2)).toBe('1,2 mm');
+    expect(formatPrecipitation(0.75)).toBe('0,8 mm');
+  });
+
+  it('formats exact zero without decimals', () => {
+    expect(formatPrecipitation(0)).toBe('0 mm');
+  });
+});
+
+describe('formatLongDayName', () => {
+  it('returns the long es-ES weekday plus the day number without a comma', () => {
+    expect(formatLongDayName('2026-07-09')).toBe('jueves 9');
+    expect(formatLongDayName('2026-07-12')).toBe('domingo 12');
+  });
+
+  it('returns the input unchanged when the date is malformed', () => {
+    expect(formatLongDayName('not-a-date')).toBe('not-a-date');
   });
 });
 

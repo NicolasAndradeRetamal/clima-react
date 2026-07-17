@@ -5,12 +5,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { madridCity } from '../../test/mocks/fixtures';
 import { FORECAST_URL, server } from '../../test/mocks/handlers';
 import { renderWithQueryClient } from '../../test/utils';
+import type { City } from '../../types/weather';
 import { WeatherPanel } from './WeatherPanel';
 
 function renderPanel(city = madridCity, onToggleFavorite = vi.fn()) {
   return renderWithQueryClient(
     <WeatherPanel city={city} isFavorite={() => false} onToggleFavorite={onToggleFavorite} />,
   );
+}
+
+/** Day cards are the buttons inside the labelled day-selection group. */
+async function findDayCards(): Promise<HTMLElement[]> {
+  const group = await screen.findByRole('group', {
+    name: 'Selecciona un día para ver el detalle por horas',
+  });
+  return within(group).getAllByRole('button');
 }
 
 describe('WeatherPanel', () => {
@@ -46,11 +55,7 @@ describe('WeatherPanel', () => {
   it('renders 7 forecast day cards with day names and temperatures', async () => {
     renderPanel();
 
-    const list = within(
-      (await screen.findByRole('heading', { name: 'Pronóstico de 7 días' }))
-        .closest('section') as HTMLElement,
-    );
-    const days = list.getAllByRole('listitem');
+    const days = await findDayCards();
     expect(days).toHaveLength(7);
 
     expect(within(days[0] as HTMLElement).getByText('Hoy')).toBeInTheDocument();
@@ -61,6 +66,62 @@ describe('WeatherPanel', () => {
     // Precipitation shown only when >= 20 %: day 4 has 90 %.
     expect(within(days[4] as HTMLElement).getByText('90 %')).toBeInTheDocument();
     expect(within(days[0] as HTMLElement).queryByText('10 %')).not.toBeInTheDocument();
+  });
+
+  it('selects today by default and renders the hourly chart for it', async () => {
+    renderPanel();
+
+    const days = await findDayCards();
+    expect(days[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(days[1]).toHaveAttribute('aria-pressed', 'false');
+    expect(
+      await screen.findByRole('heading', { name: 'Pronóstico por horas · hoy' }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('img', {
+        name: 'Gráfico de temperatura y precipitación por horas',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('updates aria-pressed and the hourly heading when another day is clicked', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    const days = await findDayCards();
+    await user.click(days[1] as HTMLElement);
+
+    expect(days[1]).toHaveAttribute('aria-pressed', 'true');
+    expect(days[0]).toHaveAttribute('aria-pressed', 'false');
+    // 2026-07-09 is Thursday the 9th.
+    expect(
+      await screen.findByRole('heading', { name: 'Pronóstico por horas · jueves 9' }),
+    ).toBeInTheDocument();
+  });
+
+  it('resets the selected day to today when the city changes', async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderPanel();
+
+    await user.click((await findDayCards())[2] as HTMLElement);
+    expect(
+      await screen.findByRole('heading', { name: 'Pronóstico por horas · viernes 10' }),
+    ).toBeInTheDocument();
+
+    const lima: City = {
+      id: 3936456,
+      name: 'Lima',
+      country: 'Perú',
+      countryCode: 'PE',
+      latitude: -12.0432,
+      longitude: -77.0282,
+    };
+    rerender(<WeatherPanel city={lima} isFavorite={() => false} onToggleFavorite={vi.fn()} />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Pronóstico por horas · hoy' }),
+    ).toBeInTheDocument();
+    expect((await findDayCards())[0]).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('shows the error card on network failure and recovers via "Reintentar"', async () => {

@@ -8,6 +8,8 @@ export interface ForecastResponse {
   current_units: CurrentWeatherUnits;
   daily: DailyForecast;
   daily_units: DailyForecastUnits;
+  hourly: HourlyForecast;
+  hourly_units: HourlyForecastUnits;
 }
 
 export interface CurrentWeather {
@@ -52,4 +54,28 @@ export interface DailyForecastUnits {
   temperature_2m_max: string;
   temperature_2m_min: string;
   precipitation_probability_max: string;
+}
+
+/**
+ * Parallel arrays, 24 entries per forecast day (168 total), local-time
+ * aligned (`timezone=auto`). Same nullability caveat as DailyForecast.
+ */
+export interface HourlyForecast {
+  /** "YYYY-MM-DDTHH:mm" */
+  time: string[];
+  /** °C */
+  temperature_2m: (number | null)[];
+  /** mm */
+  precipitation: (number | null)[];
+  /** % */
+  precipitation_probability: (number | null)[];
+}
+
+export interface HourlyForecastUnits {
+  /** "°C" */
+  temperature_2m: string;
+  /** "mm" */
+  precipitation: string;
+  /** "%" */
+  precipitation_probability: string;
 }

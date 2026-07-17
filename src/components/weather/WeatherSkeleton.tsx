@@ -25,6 +25,10 @@ export function WeatherSkeleton() {
           <div key={index} className="h-14 rounded-2xl bg-surface-sunken md:h-36" />
         ))}
       </div>
+      <div
+        aria-hidden="true"
+        className="h-56 animate-pulse rounded-2xl bg-surface-sunken motion-reduce:animate-none md:h-64"
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { ForecastResponse } from '../../types/forecast';
+import type { ForecastResponse, HourlyForecast } from '../../types/forecast';
 import type { GeocodingSearchResponse } from '../../types/geocoding';
 import type { City } from '../../types/weather';
 
@@ -49,6 +49,41 @@ export const madridCity: City = {
 };
 
 /**
+ * Deterministic hourly arrays: 24 entries per day, aligned with the daily
+ * fixture dates. Values vary by day and hour so tests can tell days apart.
+ */
+function buildHourlyFixture(days: string[]): HourlyForecast {
+  const time: string[] = [];
+  const temperature: (number | null)[] = [];
+  const precipitation: (number | null)[] = [];
+  const probability: (number | null)[] = [];
+  days.forEach((date, dayIndex) => {
+    for (let hour = 0; hour < 24; hour += 1) {
+      time.push(`${date}T${String(hour).padStart(2, '0')}:00`);
+      temperature.push(14 + dayIndex + (hour % 10));
+      precipitation.push(hour % 6 === 0 ? 1.2 : 0);
+      probability.push(hour % 6 === 0 ? 40 : 10);
+    }
+  });
+  return {
+    time,
+    temperature_2m: temperature,
+    precipitation,
+    precipitation_probability: probability,
+  };
+}
+
+const madridDailyDates = [
+  '2026-07-08',
+  '2026-07-09',
+  '2026-07-10',
+  '2026-07-11',
+  '2026-07-12',
+  '2026-07-13',
+  '2026-07-14',
+];
+
+/**
  * Forecast fixture. Current temperature (23.4 → "23°") intentionally rounds
  * to a value no daily max/min shares, so tests can assert it uniquely.
  */
@@ -72,15 +107,7 @@ export const madridForecastResponse: ForecastResponse = {
     wind_speed_10m: 'km/h',
   },
   daily: {
-    time: [
-      '2026-07-08',
-      '2026-07-09',
-      '2026-07-10',
-      '2026-07-11',
-      '2026-07-12',
-      '2026-07-13',
-      '2026-07-14',
-    ],
+    time: madridDailyDates,
     weather_code: [2, 0, 3, 61, 95, 71, 45],
     temperature_2m_max: [26.1, 27.8, 24.9, 21.2, 20.5, 22.4, 25.3],
     temperature_2m_min: [12.1, 13.4, 11.9, 10.2, 9.8, 10.5, 11.7],
@@ -90,5 +117,11 @@ export const madridForecastResponse: ForecastResponse = {
     temperature_2m_max: '°C',
     temperature_2m_min: '°C',
     precipitation_probability_max: '%',
+  },
+  hourly: buildHourlyFixture(madridDailyDates),
+  hourly_units: {
+    temperature_2m: '°C',
+    precipitation: 'mm',
+    precipitation_probability: '%',
   },
 };

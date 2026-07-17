@@ -17,6 +17,7 @@ export async function fetchForecast(
     current:
       'temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+    hourly: 'temperature_2m,precipitation,precipitation_probability',
     timezone: 'auto',
     forecast_days: '7',
     wind_speed_unit: 'kmh',

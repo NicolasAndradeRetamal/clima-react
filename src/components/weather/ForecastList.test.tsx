@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import type { DailyForecast } from '../../types/forecast';
 import { ForecastList } from './ForecastList';
 
@@ -12,12 +13,26 @@ const dailyWithNulls: DailyForecast = {
   precipitation_probability_max: [null, 40, 90],
 };
 
+function renderList(daily = dailyWithNulls, selectedDayIndex = 0, onSelectDay = vi.fn()) {
+  render(
+    <ForecastList daily={daily} selectedDayIndex={selectedDayIndex} onSelectDay={onSelectDay} />,
+  );
+  return { onSelectDay };
+}
+
+/** Day cards are the buttons inside the labelled day-selection group. */
+function getDayCards(): HTMLElement[] {
+  return within(
+    screen.getByRole('group', { name: 'Selecciona un día para ver el detalle por horas' }),
+  ).getAllByRole('button');
+}
+
 describe('ForecastList', () => {
   it('skips a day whose core daily cell is null instead of rendering 0°', () => {
-    render(<ForecastList daily={dailyWithNulls} />);
+    renderList();
 
     // Day 1 (weather_code: null) is omitted; the other two render normally.
-    const days = screen.getAllByRole('listitem');
+    const days = getDayCards();
     expect(days).toHaveLength(2);
     expect(within(days[0] as HTMLElement).getByText('Hoy')).toBeInTheDocument();
     expect(within(days[0] as HTMLElement).getByText('26°')).toBeInTheDocument();
@@ -31,9 +46,9 @@ describe('ForecastList', () => {
       // Day 0 (today) has no weather code → it is dropped entirely.
       weather_code: [null, 3, 0],
     };
-    render(<ForecastList daily={dailyMissingToday} />);
+    renderList(dailyMissingToday);
 
-    const days = screen.getAllByRole('listitem');
+    const days = getDayCards();
     expect(days).toHaveLength(2);
     // The first rendered card is tomorrow: it must keep its day name.
     expect(screen.queryByText('Hoy')).not.toBeInTheDocument();
@@ -42,12 +57,30 @@ describe('ForecastList', () => {
   });
 
   it('renders a day with null precipitation but hides the percentage', () => {
-    render(<ForecastList daily={dailyWithNulls} />);
+    renderList();
 
-    const days = screen.getAllByRole('listitem');
+    const days = getDayCards();
     // Day 0 has precipitation_probability_max: null → no "%" text at all.
     expect(within(days[0] as HTMLElement).queryByText(/%/)).not.toBeInTheDocument();
     // Day 2 (rendered second) keeps its regular 90 %.
     expect(within(days[1] as HTMLElement).getByText('90 %')).toBeInTheDocument();
+  });
+
+  it('marks only the selected day with aria-pressed', () => {
+    renderList(dailyWithNulls, 2);
+
+    const days = getDayCards();
+    expect(days[0]).toHaveAttribute('aria-pressed', 'false');
+    expect(days[1]).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('reports the ORIGINAL API index when a day is clicked, even after drops', async () => {
+    const user = userEvent.setup();
+    const { onSelectDay } = renderList();
+
+    // Second rendered card is API day 2 (day 1 was dropped for null data).
+    await user.click(getDayCards()[1] as HTMLElement);
+
+    expect(onSelectDay).toHaveBeenCalledWith(2);
   });
 });

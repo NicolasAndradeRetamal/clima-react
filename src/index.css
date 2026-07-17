@@ -24,6 +24,9 @@
   /* Feedback */
   --color-danger: light-dark(#dc2626, #f87171);
   --color-danger-soft: light-dark(#fee2e2, #450a0a);
+
+  /* Chart series — v2 (DESIGN.md §8.1): only inside HourlyChart */
+  --color-chart-temp: light-dark(#ea580c, #fb923c);
 }
 
 :root {
