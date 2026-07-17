@@ -90,8 +90,11 @@ export function useGeolocation(): UseGeolocationResult {
         }
         if (result.state === 'denied') {
           setState({ status: 'denied', coords: null });
-        } else if (result.state === 'granted') {
-          requestLocation(); // silent: already granted, no prompt will appear
+        } else if (result.state === 'granted' && stateRef.current.status === 'idle') {
+          // Silent: already granted, no prompt will appear. Only from 'idle':
+          // if a manual request already ran (or is running), re-fetching here
+          // would flick the UI back to 'requesting' for no benefit.
+          requestLocation();
         }
         // 'prompt' → stay 'idle' until the user clicks the banner button.
       })

@@ -37,6 +37,26 @@ describe('useGeolocation', () => {
     expect(getCurrentPosition).toHaveBeenCalledTimes(1);
   });
 
+  it('does not re-request when "granted" resolves after a manual request', async () => {
+    const { getCurrentPosition } = installGeolocationMock({
+      permission: 'granted',
+      position: lima,
+    });
+    const { result } = renderHook(() => useGeolocation());
+
+    // Manual request before the Permissions API query resolves: the silent
+    // auto-read must notice it and skip its own fetch (no flicker back to
+    // 'requesting', no duplicate getCurrentPosition call).
+    act(() => {
+      result.current.requestLocation();
+    });
+
+    await waitFor(() => {
+      expect(result.current.status).toBe('granted');
+    });
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+  });
+
   it('is "denied" from mount when the Permissions API reports denied', async () => {
     const { getCurrentPosition } = installGeolocationMock({ permission: 'denied' });
     const { result } = renderHook(() => useGeolocation());
