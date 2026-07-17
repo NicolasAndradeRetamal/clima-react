@@ -23,41 +23,63 @@ describe('App (geolocation integration)', () => {
     expect(screen.getByText('Busca una ciudad para ver el clima')).toBeInTheDocument();
   });
 
-  it('auto-selects "Tu ubicación" when the permission is already granted', async () => {
-    installGeolocationMock({
-      permission: 'granted',
-      position: { latitude: 40.4165, longitude: -3.7026 },
-    });
-    renderWithQueryClient(<App />);
+  // Integration tests: geolocation microtasks + MSW fetch can exceed the
+  // default 1 s findBy / 5 s test timeouts when the suite runs in parallel.
+  const INTEGRATION_TIMEOUT = { timeout: 5000 };
 
-    expect(await screen.findByRole('heading', { name: 'Tu ubicación' })).toBeInTheDocument();
-    // Weather data comes from the MSW forecast fixture.
-    expect(await screen.findByText('23°')).toBeInTheDocument();
-    // The current position has no geocoding id: the favorite star must not exist.
-    expect(screen.queryByRole('button', { name: 'Añadir a favoritas' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Quitar de favoritas' })).not.toBeInTheDocument();
-    // Once granted, the banner is gone.
-    expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
-  });
+  it(
+    'auto-selects "Tu ubicación" when the permission is already granted',
+    async () => {
+      installGeolocationMock({
+        permission: 'granted',
+        position: { latitude: 40.4165, longitude: -3.7026 },
+      });
+      renderWithQueryClient(<App />);
 
-  it('moves focus to the "Tu ubicación" heading after granting from the banner', async () => {
-    installGeolocationMock({
-      permission: 'prompt',
-      position: { latitude: 40.4165, longitude: -3.7026 },
-    });
-    const user = userEvent.setup();
-    renderWithQueryClient(<App />);
+      expect(
+        await screen.findByRole('heading', { name: 'Tu ubicación' }, INTEGRATION_TIMEOUT),
+      ).toBeInTheDocument();
+      // Weather data comes from the MSW forecast fixture.
+      expect(await screen.findByText('23°', undefined, INTEGRATION_TIMEOUT)).toBeInTheDocument();
+      // The current position has no geocoding id: the favorite star must not exist.
+      expect(
+        screen.queryByRole('button', { name: 'Añadir a favoritas' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Quitar de favoritas' }),
+      ).not.toBeInTheDocument();
+      // Once granted, the banner is gone.
+      expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).not.toBeInTheDocument();
+    },
+    15_000,
+  );
 
-    // Clicking leaves the focus on the banner button; when the permission is
-    // granted the button unmounts and the focus must land on the heading
-    // (tabindex -1) instead of falling to <body> (DESIGN.md §9.1/§9.3).
-    await user.click(await screen.findByRole('button', { name: 'Usar mi ubicación' }));
+  it(
+    'moves focus to the "Tu ubicación" heading after granting from the banner',
+    async () => {
+      installGeolocationMock({
+        permission: 'prompt',
+        position: { latitude: 40.4165, longitude: -3.7026 },
+      });
+      const user = userEvent.setup();
+      renderWithQueryClient(<App />);
 
-    const heading = await screen.findByRole('heading', { name: 'Tu ubicación' });
-    await waitFor(() => {
-      expect(heading).toHaveFocus();
-    });
-  });
+      // Clicking leaves the focus on the banner button; when the permission
+      // is granted the button unmounts and the focus must land on the heading
+      // (tabindex -1) instead of falling to <body> (DESIGN.md §9.1/§9.3).
+      await user.click(screen.getByRole('button', { name: 'Usar mi ubicación' }));
+
+      const heading = await screen.findByRole(
+        'heading',
+        { name: 'Tu ubicación' },
+        INTEGRATION_TIMEOUT,
+      );
+      await waitFor(() => {
+        expect(heading).toHaveFocus();
+      }, INTEGRATION_TIMEOUT);
+    },
+    15_000,
+  );
 });
 
 describe('App (offline banner)', () => {
