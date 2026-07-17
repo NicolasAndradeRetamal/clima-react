@@ -3,7 +3,7 @@ import { useWeather } from '../../hooks/useWeather';
 import { formatLongDayName } from '../../lib/format';
 import { selectHourlyForDay } from '../../lib/hourly';
 import type { ForecastResponse } from '../../types/forecast';
-import type { City } from '../../types/weather';
+import type { City, SelectedLocation } from '../../types/weather';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { SearchIcon } from '../ui/SearchIcon';
@@ -30,7 +30,7 @@ function HourlyChartFallback({ title }: { title: string }) {
 }
 
 interface WeatherContentProps {
-  city: City;
+  location: SelectedLocation;
   data: ForecastResponse;
   isRefetching: boolean;
   isFavorite: boolean;
@@ -43,7 +43,7 @@ interface WeatherContentProps {
  * location changes, so the selection resets to today without effects.
  */
 function WeatherContent({
-  city,
+  location,
   data,
   isRefetching,
   isFavorite,
@@ -67,7 +67,7 @@ function WeatherContent({
   return (
     <div className="space-y-6">
       <CurrentWeatherCard
-        city={city}
+        location={location}
         current={data.current}
         isRefetching={isRefetching}
         isFavorite={isFavorite}
@@ -96,19 +96,22 @@ function WeatherContent({
 }
 
 interface WeatherPanelProps {
-  city: City | null;
+  location: SelectedLocation | null;
   isFavorite: (cityId: number) => boolean;
   onToggleFavorite: (city: City) => void;
 }
 
 /**
- * Weather section for the selected city. Owns the `useWeather` query and
- * renders every remote state: empty (no city), loading, error and success.
+ * Weather section for the selected location (searched city or geolocation).
+ * Owns the `useWeather` query and renders every remote state: empty (no
+ * selection), loading, error and success.
  */
-export function WeatherPanel({ city, isFavorite, onToggleFavorite }: WeatherPanelProps) {
-  const { data, isPending, isError, isFetching, refetch } = useWeather(city);
+export function WeatherPanel({ location, isFavorite, onToggleFavorite }: WeatherPanelProps) {
+  const coords =
+    location === null ? null : { latitude: location.latitude, longitude: location.longitude };
+  const { data, isPending, isError, isFetching, refetch } = useWeather(coords);
 
-  if (city === null) {
+  if (location === null) {
     return (
       <EmptyState
         icon={<SearchIcon className="size-10 text-ink-muted" />}
@@ -132,15 +135,18 @@ export function WeatherPanel({ city, isFavorite, onToggleFavorite }: WeatherPane
     );
   }
 
+  const city = location.city;
   return (
     <WeatherContent
-      key={`${city.latitude},${city.longitude}`}
-      city={city}
+      key={`${location.latitude},${location.longitude}`}
+      location={location}
       data={data}
       isRefetching={isFetching}
-      isFavorite={isFavorite(city.id)}
+      isFavorite={city !== undefined && isFavorite(city.id)}
       onToggleFavorite={() => {
-        onToggleFavorite(city);
+        if (city !== undefined) {
+          onToggleFavorite(city);
+        }
       }}
     />
   );

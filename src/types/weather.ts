@@ -32,3 +32,15 @@ export interface City {
 
 /** What is persisted in localStorage. Same shape, explicit alias for clarity. */
 export type FavoriteCity = City;
+
+/** What the app displays weather for: a searched city or the user's position. */
+export interface SelectedLocation {
+  latitude: number;
+  longitude: number;
+  /** UI heading: city name, or "Tu ubicación" for geolocation. */
+  label: string;
+  /** Secondary line (admin1, country); absent for geolocation. */
+  sublabel?: string;
+  /** Present when it came from search/favorites; enables the favorite toggle. */
+  city?: City;
+}

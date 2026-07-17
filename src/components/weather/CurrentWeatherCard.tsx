@@ -1,8 +1,9 @@
 import { formatPercent, formatTemperature, formatWind } from '../../lib/format';
 import { getWeatherCondition } from '../../lib/weatherCodes';
 import type { CurrentWeather } from '../../types/forecast';
-import type { City } from '../../types/weather';
+import type { SelectedLocation } from '../../types/weather';
 import { FavoriteToggleButton } from '../favorites/FavoriteToggleButton';
+import { LocationIcon } from '../ui/LocationIcon';
 import { Spinner } from '../ui/Spinner';
 import { WeatherIcon } from './WeatherIcon';
 
@@ -21,7 +22,7 @@ function MetricTile({ label, value }: MetricTileProps) {
 }
 
 interface CurrentWeatherCardProps {
-  city: City;
+  location: SelectedLocation;
   current: CurrentWeather;
   /** Background refetch in progress (data stays visible). */
   isRefetching: boolean;
@@ -29,22 +30,28 @@ interface CurrentWeatherCardProps {
   onToggleFavorite: () => void;
 }
 
-/** Hero card: city, condition, temperature, feels-like and metric tiles. */
+/** Hero card: location, condition, temperature, feels-like and metric tiles. */
 export function CurrentWeatherCard({
-  city,
+  location,
   current,
   isRefetching,
   isFavorite,
   onToggleFavorite,
 }: CurrentWeatherCardProps) {
   const condition = getWeatherCondition(current.weather_code);
+  // Geolocation ("Tu ubicación") has no geocoding id: no favorite toggle at
+  // all (not even disabled) and a pin instead of the admin/country subline.
+  const isCurrentPosition = location.city === undefined;
 
   return (
     <section className="rounded-2xl border border-line bg-surface-raised p-4 shadow-sm sm:p-6">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold">{city.name}</h2>
+            <h2 className="inline-flex items-center gap-1.5 text-xl font-semibold">
+              {isCurrentPosition && <LocationIcon className="size-5 text-brand" />}
+              {location.label}
+            </h2>
             {isRefetching && (
               <span role="status">
                 <Spinner className="size-4 text-ink-muted" />
@@ -52,12 +59,14 @@ export function CurrentWeatherCard({
               </span>
             )}
           </div>
-          <p className="text-xs text-ink-muted">
-            {city.admin1 ? `${city.admin1} · ${city.country}` : city.country}
-          </p>
+          {location.sublabel !== undefined && (
+            <p className="text-xs text-ink-muted">{location.sublabel}</p>
+          )}
           <p className="mt-1 text-sm text-ink-muted">{condition.label}</p>
         </div>
-        <FavoriteToggleButton isFavorite={isFavorite} onToggle={onToggleFavorite} />
+        {!isCurrentPosition && (
+          <FavoriteToggleButton isFavorite={isFavorite} onToggle={onToggleFavorite} />
+        )}
       </div>
 
       <div className="mt-4 flex items-center gap-4">

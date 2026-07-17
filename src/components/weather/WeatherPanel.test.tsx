@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
+import { cityToLocation } from '../../lib/location';
 import { madridCity } from '../../test/mocks/fixtures';
 import { FORECAST_URL, server } from '../../test/mocks/handlers';
 import { renderWithQueryClient } from '../../test/utils';
@@ -10,7 +11,11 @@ import { WeatherPanel } from './WeatherPanel';
 
 function renderPanel(city = madridCity, onToggleFavorite = vi.fn()) {
   return renderWithQueryClient(
-    <WeatherPanel city={city} isFavorite={() => false} onToggleFavorite={onToggleFavorite} />,
+    <WeatherPanel
+      location={cityToLocation(city)}
+      isFavorite={() => false}
+      onToggleFavorite={onToggleFavorite}
+    />,
   );
 }
 
@@ -25,7 +30,7 @@ async function findDayCards(): Promise<HTMLElement[]> {
 describe('WeatherPanel', () => {
   it('shows the empty state when no city is selected', () => {
     renderWithQueryClient(
-      <WeatherPanel city={null} isFavorite={() => false} onToggleFavorite={vi.fn()} />,
+      <WeatherPanel location={null} isFavorite={() => false} onToggleFavorite={vi.fn()} />,
     );
 
     expect(screen.getByText('Busca una ciudad para ver el clima')).toBeInTheDocument();
@@ -116,7 +121,13 @@ describe('WeatherPanel', () => {
       latitude: -12.0432,
       longitude: -77.0282,
     };
-    rerender(<WeatherPanel city={lima} isFavorite={() => false} onToggleFavorite={vi.fn()} />);
+    rerender(
+      <WeatherPanel
+        location={cityToLocation(lima)}
+        isFavorite={() => false}
+        onToggleFavorite={vi.fn()}
+      />,
+    );
 
     expect(
       await screen.findByRole('heading', { name: 'Pronóstico por horas · hoy' }),
