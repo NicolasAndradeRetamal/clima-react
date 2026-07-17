@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import { cityToLocation } from '../../lib/location';
-import { madridCity } from '../../test/mocks/fixtures';
+import { madridCity, madridForecastResponse } from '../../test/mocks/fixtures';
 import { FORECAST_URL, server } from '../../test/mocks/handlers';
 import { renderWithQueryClient } from '../../test/utils';
 import type { City } from '../../types/weather';
@@ -133,6 +133,43 @@ describe('WeatherPanel', () => {
       await screen.findByRole('heading', { name: 'Pronóstico por horas · hoy' }),
     ).toBeInTheDocument();
     expect((await findDayCards())[0]).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('shows the hourly empty state when the selected day has no hourly data', async () => {
+    const response = structuredClone(madridForecastResponse);
+    // Null out every hourly cell of today (24 first entries, selected by
+    // default): the chart has nothing to draw.
+    for (let hour = 0; hour < 24; hour += 1) {
+      response.hourly.temperature_2m[hour] = null;
+      response.hourly.precipitation[hour] = null;
+      response.hourly.precipitation_probability[hour] = null;
+    }
+    server.use(http.get(FORECAST_URL, () => HttpResponse.json(response), { once: true }));
+    renderPanel();
+
+    expect(await screen.findByText('Sin datos horarios para este día')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Pronóstico por horas · hoy' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('img', { name: 'Gráfico de temperatura y precipitación por horas' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('selects the first rendered day when today is dropped for missing data', async () => {
+    const response = structuredClone(madridForecastResponse);
+    response.daily.weather_code[0] = null; // today gets dropped by toForecastDays
+    server.use(http.get(FORECAST_URL, () => HttpResponse.json(response), { once: true }));
+    renderPanel();
+
+    const days = await findDayCards();
+    expect(days).toHaveLength(6);
+    // The selection starts on the first day actually rendered (API index 1),
+    // never orphaned on the dropped index 0.
+    expect(days[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      await screen.findByRole('heading', { name: 'Pronóstico por horas · jueves 9' }),
+    ).toBeInTheDocument();
   });
 
   it('shows the error card on network failure and recovers via "Reintentar"', async () => {
