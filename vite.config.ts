@@ -9,7 +9,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      // No `includeAssets` and no auto-included manifest icons: everything
+      // under public/ (favicon, icons) is already precached by `globPatterns`
+      // below; adding it again would duplicate precache entries (QA MINOR-1).
+      includeManifestIcons: false,
       manifest: {
         name: 'Clima — Pronóstico del tiempo',
         short_name: 'Clima',
