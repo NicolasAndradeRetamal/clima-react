@@ -9,7 +9,7 @@ import { ErrorMessage } from '../ui/ErrorMessage';
 import { SearchIcon } from '../ui/SearchIcon';
 import { SectionHeading } from '../ui/SectionHeading';
 import { CurrentWeatherCard } from './CurrentWeatherCard';
-import { ForecastList } from './ForecastList';
+import { ForecastList, toForecastDays } from './ForecastList';
 import { WeatherSkeleton } from './WeatherSkeleton';
 
 // Recharts lives in its own chunk: it never penalizes the initial load.
@@ -51,7 +51,12 @@ function WeatherContent({
   onToggleFavorite,
   onLocationHeadingMount,
 }: WeatherContentProps) {
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  // Seed the selection with the first day ForecastList actually renders: if
+  // today (index 0) is dropped for missing data, starting at 0 would leave
+  // an orphan selection with no card marked aria-pressed="true".
+  const [selectedDayIndex, setSelectedDayIndex] = useState(
+    () => toForecastDays(data.daily)[0]?.index ?? 0,
+  );
 
   const selectedDate = data.daily.time[selectedDayIndex];
   const points = selectedDate === undefined ? [] : selectHourlyForDay(data.hourly, selectedDate);

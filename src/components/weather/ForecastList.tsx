@@ -6,9 +6,10 @@ import { ForecastDayCard, type ForecastDay } from './ForecastDayCard';
  * Zips the API's parallel arrays into per-day objects, skipping any index
  * with missing data (defensive with `noUncheckedIndexedAccess`). Open-Meteo
  * may emit `null` in cells without data (QA LOW-2), so `null` is treated
- * like a missing index.
+ * like a missing index. Exported so WeatherPanel can seed the day selection
+ * with the first index that actually renders.
  */
-function toForecastDays(daily: DailyForecast): ForecastDay[] {
+export function toForecastDays(daily: DailyForecast): ForecastDay[] {
   return daily.time.flatMap((date, index) => {
     const weatherCode = daily.weather_code[index];
     const tempMax = daily.temperature_2m_max[index];
