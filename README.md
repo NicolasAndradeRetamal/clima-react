@@ -1,8 +1,10 @@
 # clima-react
 
 Aplicación de clima construida con React moderno. Busca cualquier ciudad del
-mundo con autocompletado, consulta el clima actual y el pronóstico a 7 días,
-y guarda tus ciudades favoritas. Consume las APIs públicas de
+mundo con autocompletado (o usa tu ubicación actual), consulta el clima
+actual, el pronóstico a 7 días y el detalle horario en un gráfico
+interactivo, y guarda tus ciudades favoritas. Es una **PWA instalable con
+soporte offline** que consume las APIs públicas de
 [Open-Meteo](https://open-meteo.com/) directamente desde el navegador: sin
 backend propio, sin API keys y sin secretos.
 
@@ -26,6 +28,8 @@ Despliegue automático en GitHub Pages en cada push a `main`
 | UI | React 19 + TypeScript (estricto), Vite 8 |
 | Datos remotos | TanStack Query v5 + `fetch` nativo tipado |
 | API | Open-Meteo (geocoding + forecast), pública y sin API key |
+| Gráficos | Recharts v3 (cargado lazy, en chunk separado) |
+| PWA | vite-plugin-pwa (Workbox `generateSW`, actualización automática) |
 | Estilos | Tailwind CSS v4 |
 | Tests | Vitest + React Testing Library + MSW |
 | CI/CD | GitHub Actions → GitHub Pages |
@@ -37,6 +41,14 @@ Despliegue automático en GitHub Pages en cada push a `main`
 - **Clima actual**: temperatura, sensación térmica, viento, humedad e icono
   según la condición (mapeo de códigos WMO, con variantes día/noche).
 - **Pronóstico de 7 días**: máximas, mínimas y probabilidad de precipitación.
+- **Gráfico horario interactivo**: curva de temperatura y precipitación por
+  horas del día seleccionado, con tooltip (Recharts, cargado bajo demanda
+  para no penalizar el bundle inicial).
+- **Clima por geolocalización**: al abrir, la app ofrece el clima de tu
+  ubicación actual (Geolocation API), con manejo explícito de permiso
+  denegado o navegador sin soporte.
+- **PWA instalable con soporte offline**: app shell precacheada y última
+  consulta exitosa disponible sin conexión, con banner de estado offline.
 - **Favoritas**: ciudades persistidas en `localStorage` (máximo 10), acceso
   con un clic.
 - **Estados visibles**: cargando, error de red con reintento y "ciudad no
@@ -67,26 +79,45 @@ nada más: no hay variables de entorno ni credenciales.
 | `npm run test:watch` | Tests en modo watch |
 | `npm run typecheck` | Solo comprobación de tipos, sin emitir |
 
+### Probar la PWA en local
+
+El service worker **no corre en `npm run dev`** (a propósito: así no
+interfiere con el HMR ni con MSW en los tests). Solo se genera en el build de
+producción:
+
+```bash
+npm run build
+npm run preview
+```
+
+Abre `http://localhost:4173` y en DevTools → **Application → Service workers**
+verás el SW activo. Para probar el modo offline: carga una ciudad, marca
+la casilla **Offline** en esa misma pestaña y recarga — la app shell y la
+última consulta siguen disponibles. El navegador ofrecerá además instalar la
+app (icono en la barra de direcciones en desktop).
+
 ## Tests
 
 ```bash
 npm test
 ```
 
-53 tests con Vitest + React Testing Library. Las peticiones HTTP se
+92 tests con Vitest + React Testing Library. Las peticiones HTTP se
 interceptan con **MSW**, así que los tests ejecutan el camino real de `fetch`
 contra fixtures tipados con las mismas interfaces que la API (si el tipo y el
 fixture divergen, no compila). Se cubren: mapeo de códigos WMO, formateo
-es-ES, hooks (`useFavorites`, `useDebouncedValue`), flujo completo de búsqueda
-y panel de clima con sus estados de error y reintento.
+es-ES, hooks (`useFavorites`, `useDebouncedValue`, `useGeolocation`), flujo
+completo de búsqueda, panel de clima con sus estados de error y reintento,
+gráfico horario (transformación de datos y render) y banners de
+geolocalización y de estado offline.
 
 ## Estructura del proyecto
 
 ```
 src/
 ├── api/          # Cliente fetch tipado + endpoints de Open-Meteo (sin React)
-├── hooks/        # useCitySearch, useWeather, useFavorites, useDebouncedValue
-├── components/   # search/ weather/ favorites/ ui/ — consumen hooks, nunca fetch
+├── hooks/        # useCitySearch, useWeather, useFavorites, useGeolocation...
+├── components/   # search/ weather/ favorites/ location/ ui/ — consumen hooks, nunca fetch
 ├── lib/          # Funciones puras: códigos WMO → condición, formateo es-ES
 ├── types/        # Tipos de las respuestas de la API + tipos de dominio
 └── test/         # Setup de Vitest, helpers y handlers/fixtures de MSW
@@ -116,6 +147,12 @@ Nota sobre la `base` de Vite: Pages sirve los project sites bajo
 `/<nombre-del-repo>/`, así que el workflow compila con
 `npm run build -- --base="/<repo>/"` (derivado automáticamente del nombre del
 repositorio). `vite.config.ts` no se toca y el build local mantiene `base: '/'`.
+
+La PWA no necesita configuración extra en el deploy: el mismo build emite
+`sw.js`, `workbox-*.js` y `manifest.webmanifest` dentro de `dist/`, y
+`vite-plugin-pwa` deriva el `scope` y el `start_url` del manifest a partir de
+esa `base`, así que el service worker queda correctamente acotado a
+`/<repo>/`. GitHub Pages sirve por HTTPS, requisito de los service workers.
 
 ### Alternativa: Vercel o Netlify
 
