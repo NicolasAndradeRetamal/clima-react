@@ -1,4 +1,4 @@
-/** Raw types of the Open-Meteo Geocoding API (see ARCHITECTURE.md §4.1). */
+/** Raw types of the Open-Meteo Geocoding API. */
 
 export interface GeocodingSearchResponse {
   /** Absent (not empty array) when there are no matches. */

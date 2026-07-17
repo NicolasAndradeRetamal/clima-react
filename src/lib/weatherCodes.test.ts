@@ -3,7 +3,7 @@ import type { WeatherKind } from '../types/weather';
 import { getWeatherCondition } from './weatherCodes';
 
 describe('getWeatherCondition', () => {
-  // One representative code per WMO group (ARCHITECTURE.md §4.4).
+  // One representative code per WMO group.
   it.each<[number, WeatherKind, string]>([
     [0, 'clear', 'Despejado'],
     [1, 'clear', 'Mayormente despejado'],

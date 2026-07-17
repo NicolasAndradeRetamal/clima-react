@@ -1,6 +1,6 @@
 import type { WeatherCondition } from '../types/weather';
 
-/** WMO weather code → domain condition (ARCHITECTURE.md §4.4). Pure data. */
+/** WMO weather code → domain condition. */
 const WEATHER_CONDITIONS: Record<number, WeatherCondition> = {
   0: { kind: 'clear', label: 'Despejado' },
   1: { kind: 'clear', label: 'Mayormente despejado' },

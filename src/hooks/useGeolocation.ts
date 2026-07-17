@@ -30,10 +30,8 @@ export interface UseGeolocationResult extends GeolocationState {
 }
 
 /**
- * Browser geolocation as a state machine (ARCHITECTURE.md §11.2). On mount it
- * only *queries* the Permissions API: coordinates are read silently when the
- * permission is already granted, and the browser prompt is never shown until
- * the user explicitly calls `requestLocation`.
+ * Browser geolocation as a state machine. The browser prompt is never shown
+ * until the user explicitly calls `requestLocation`.
  */
 export function useGeolocation(): UseGeolocationResult {
   const [state, setState] = useState<GeolocationState>(() => {
@@ -91,9 +89,8 @@ export function useGeolocation(): UseGeolocationResult {
         if (result.state === 'denied') {
           setState({ status: 'denied', coords: null });
         } else if (result.state === 'granted' && stateRef.current.status === 'idle') {
-          // Silent: already granted, no prompt will appear. Only from 'idle':
-          // if a manual request already ran (or is running), re-fetching here
-          // would flick the UI back to 'requesting' for no benefit.
+          // Already granted → no prompt. Only from 'idle', so a manual
+          // request is never flicked back to 'requesting'.
           requestLocation();
         }
         // 'prompt' → stay 'idle' until the user clicks the banner button.

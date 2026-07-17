@@ -29,10 +29,7 @@ interface CurrentWeatherCardProps {
   isRefetching: boolean;
   isFavorite: boolean;
   onToggleFavorite: () => void;
-  /**
-   * Called when the "Tu ubicación" heading mounts. It is the programmatic
-   * focus target after granting geolocation from the banner (DESIGN.md §9.3).
-   */
+  /** Focus target handoff after granting geolocation from the banner. */
   onLocationHeadingMount?: (heading: HTMLHeadingElement) => void;
 }
 
@@ -64,11 +61,7 @@ export function CurrentWeatherCard({
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            {/*
-              tabIndex -1 (only for "Tu ubicación"): receives programmatic
-              focus after the geolocation permission is granted, without
-              entering the tab order (DESIGN.md §9.3).
-            */}
+            {/* tabIndex -1: programmatic focus target without entering the tab order */}
             <h2
               ref={headingRef}
               tabIndex={isCurrentPosition ? -1 : undefined}

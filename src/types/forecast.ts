@@ -1,4 +1,4 @@
-/** Raw types of the Open-Meteo Forecast API (see ARCHITECTURE.md §4.2). */
+/** Raw types of the Open-Meteo Forecast API. */
 
 export interface ForecastResponse {
   latitude: number;
@@ -23,7 +23,7 @@ export interface CurrentWeather {
   relative_humidity_2m: number;
   /** km/h */
   wind_speed_10m: number;
-  /** WMO code, see ARCHITECTURE.md §4.4. */
+  /** WMO code. */
   weather_code: number;
   is_day: 0 | 1;
 }

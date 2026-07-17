@@ -64,9 +64,8 @@ describe('App (geolocation integration)', () => {
       const user = userEvent.setup();
       renderWithQueryClient(<App />);
 
-      // Clicking leaves the focus on the banner button; when the permission
-      // is granted the button unmounts and the focus must land on the heading
-      // (tabindex -1) instead of falling to <body> (DESIGN.md §9.1/§9.3).
+      // Granting unmounts the focused button; focus must land on the
+      // heading instead of falling to <body>.
       await user.click(screen.getByRole('button', { name: 'Usar mi ubicación' }));
 
       const heading = await screen.findByRole(

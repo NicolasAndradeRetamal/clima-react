@@ -107,7 +107,7 @@ interface WeatherPanelProps {
   location: SelectedLocation | null;
   isFavorite: (cityId: number) => boolean;
   onToggleFavorite: (city: City) => void;
-  /** Forwarded to CurrentWeatherCard (focus handoff, DESIGN.md §9.3). */
+  /** Forwarded to CurrentWeatherCard for the focus handoff. */
   onLocationHeadingMount?: (heading: HTMLHeadingElement) => void;
 }
 

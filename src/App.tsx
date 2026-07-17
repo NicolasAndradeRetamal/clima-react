@@ -30,9 +30,8 @@ export function App() {
     setSelectedLocation(cityToLocation(city));
   }, []);
 
-  // One-shot flag (DESIGN.md §9.1): set when the permission is granted while
-  // keyboard focus was on the banner button (which unmounts), consumed when
-  // the "Tu ubicación" heading mounts and receives the focus.
+  // One-shot: set when granting unmounts the focused banner button, consumed
+  // when the location heading mounts and picks up the focus.
   const pendingHeadingFocus = useRef(false);
 
   const handleGrantedFocusHandoff = useCallback(() => {
@@ -44,8 +43,7 @@ export function App() {
       return;
     }
     pendingHeadingFocus.current = false;
-    // If the user moved on while the forecast loaded, never steal the focus:
-    // only pick it up from <body>, where the unmounted button dropped it.
+    // Only pick focus up from <body>; never steal it if the user moved on.
     if (document.activeElement === document.body) {
       heading.focus();
     }

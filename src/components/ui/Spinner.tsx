@@ -3,10 +3,7 @@ interface SpinnerProps {
   className?: string;
 }
 
-/**
- * Decorative spinning circle. Callers must wrap it in a `role="status"`
- * element with `sr-only` Spanish text (see DESIGN.md §4.6).
- */
+/** Decorative: callers wrap it in `role="status"` with `sr-only` text. */
 export function Spinner({ className }: SpinnerProps) {
   return (
     <svg

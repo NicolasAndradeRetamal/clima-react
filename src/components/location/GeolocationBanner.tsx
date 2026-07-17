@@ -54,44 +54,31 @@ function InfoRow({ children }: { children: ReactNode }) {
 interface GeolocationBannerProps {
   status: GeolocationStatus;
   onRequestLocation: () => void;
-  /**
-   * Called when the permission is granted while keyboard focus was on the
-   * banner button (which unmounts with the banner). The parent moves focus
-   * to the "Tu ubicación" heading once it renders (DESIGN.md §9.1/§9.3).
-   */
+  /** Called on grant if focus was on the banner button, which unmounts. */
   onGrantedFocusHandoff?: () => void;
 }
 
-/**
- * Light row offering the current position as an alternative selection
- * (DESIGN.md §9.1). Never blocks manual search; disappears entirely when
- * geolocation is unsupported or already granted.
- */
+/** Offers the current position without ever blocking manual search. */
 export function GeolocationBanner({
   status,
   onRequestLocation,
   onGrantedFocusHandoff,
 }: GeolocationBannerProps) {
-  // Dismissing the "denied" notice hides it for the session (local state).
   const [dismissed, setDismissed] = useState(false);
-  // Whether keyboard focus is on the request button. Removing a focused
-  // element fires no blur event, so the flag survives the button unmounting
-  // and tells us the transition itself displaced the focus (WCAG 2.4.3).
+  // Removing a focused element fires no blur, so this survives the unmount.
   const requestButtonHadFocus = useRef(false);
   const previousStatus = useRef(status);
   const dismissButtonRef = useRef<HTMLButtonElement>(null);
   const retryButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Focus management when leaving 'requesting' (DESIGN.md §9.1): the button
-  // unmounts and, without this, focus would fall to document.body.
+  // When the requesting button unmounts, focus would fall to document.body.
   useEffect(() => {
     const previous = previousStatus.current;
     previousStatus.current = status;
     if (previous !== 'requesting' || status === 'requesting') {
       return;
     }
-    // Only restore focus that the transition displaced; if the user was
-    // somewhere else, never steal it.
+    // Never steal focus the user had somewhere else.
     if (!requestButtonHadFocus.current) {
       return;
     }
@@ -112,15 +99,10 @@ export function GeolocationBanner({
   if (status === 'idle' || status === 'requesting') {
     const isRequesting = status === 'requesting';
     return (
-      // The live region must exist before its content changes to
-      // "Obteniendo…" for screen readers to announce the transition.
+      // The live region must exist before its content changes to be announced.
       <div role="status" className="min-h-10">
-        {/*
-          idle and requesting share this very <button>: swapping elements
-          would expel keyboard focus (WCAG 2.4.3). While requesting it is
-          marked aria-disabled + onClick guard — never `disabled`, which
-          would also push focus to document.body (DESIGN.md §9.1).
-        */}
+        {/* Same button for both states; aria-disabled instead of `disabled`
+            so keyboard focus is never expelled */}
         <button
           type="button"
           aria-disabled={isRequesting || undefined}
