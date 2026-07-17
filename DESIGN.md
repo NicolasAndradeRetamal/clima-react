@@ -134,6 +134,9 @@ Contenido exacto del archivo del que debe partir el frontend:
   /* Feedback */
   --color-danger: light-dark(#dc2626, #f87171);
   --color-danger-soft: light-dark(#fee2e2, #450a0a);
+
+  /* Chart series — v2 (§8.1): only inside HourlyChart */
+  --color-chart-temp: light-dark(#ea580c, #fb923c);
 }
 
 :root {
@@ -477,6 +480,8 @@ movimiento esencial. Añadir `motion-reduce:animate-none` solo a los skeletons.
 
 ## 7. Referencia de copy (cadenas finales en español)
 
+Cadenas del MVP. Las cadenas nuevas de v2 están en §11.
+
 | Contexto | Cadena |
 |---|---|
 | Placeholder del input | `Buscar ciudad…` |
@@ -497,3 +502,314 @@ movimiento esencial. Añadir `motion-reduce:animate-none` solo a los skeletons.
 | Encabezado del pronóstico | `Pronóstico de 7 días` |
 | Hoy | `Hoy` |
 | Título de la app | `Clima` |
+
+---
+
+# Parte II — Diseño v2
+
+Extensión de diseño para las tres features de v2 (ARCHITECTURE.md §9–§13):
+gráfico horario, geolocalización y PWA. **La identidad de la Parte I no
+cambia**: mismos tokens, misma tipografía, mismos patrones de tarjeta. Todo lo
+nuevo se construye con las utilidades semánticas existentes; los únicos tokens
+nuevos son los del gráfico (§8.1, ya añadidos al bloque `@theme` de §2).
+
+---
+
+## 8. Gráfico horario (`HourlyChart`)
+
+Curva de temperatura + barras de precipitación por horas del día seleccionado.
+Librería: Recharts 3.9.2, lazy-loaded (ARCHITECTURE §10).
+
+### 8.1 Tokens del gráfico
+
+| Token | Claro | Oscuro | Uso |
+|---|---|---|---|
+| `chart-temp` | `#ea580c` (orange-600) | `#fb923c` (orange-400) | Línea de temperatura, dot del tooltip, swatch de leyenda |
+| `brand` (existente) | `#0284c7` | `#38bdf8` | Barras de precipitación, swatch de leyenda |
+
+Justificación: la regla de identidad "un solo acento cálido reservado a la
+estrella" (§1.1) se mantiene — `chart-temp` es un naranja **de visualización de
+datos**, visiblemente más rojizo que el ámbar de `accent`, y su uso está
+restringido al gráfico. El par naranja/azul es el dúo clásico seguro para
+daltonismo (deuteranopia/protanopia), y además las dos series se distinguen
+por **forma** (línea vs. barras), nunca solo por color. Contraste como gráfico
+informativo (WCAG 1.4.11, ≥3:1): orange-600 sobre blanco 3.6:1, orange-400
+sobre slate-800 6.2:1, brand ya validado en §1.3.
+
+En recharts los colores se pasan como valor de prop: usar
+`var(--color-chart-temp)`, `var(--color-brand)`, `var(--color-line)` y
+`var(--color-ink-muted)` — nunca hex crudos, para que el modo oscuro salga
+gratis también dentro del SVG del chart.
+
+### 8.2 Ubicación en el layout
+
+Nueva sección al final de `WeatherPanel`, **debajo del pronóstico de 7 días**
+(el gráfico detalla el día que se selecciona en esa lista; la lectura es de
+arriba abajo: actual → semana → detalle por horas):
+
+```
+├──────────────────────────────┤
+│ PRONÓSTICO DE 7 DÍAS         │  ForecastList (días ahora seleccionables)
+├──────────────────────────────┤
+│ PRONÓSTICO POR HORAS · HOY   │  <h2>, mismo estilo de encabezado de sección
+│ ┌──────────────────────────┐ │
+│ │  [gráfico]               │ │  tarjeta estándar
+│ │  ● Temperatura (°C)      │ │  leyenda
+│ │  ▪ Precipitación (mm)    │ │
+│ └──────────────────────────┘ │
+└──────────────────────────────┘
+```
+
+- Encabezado de sección (`<h2>`, mismo estilo que "Pronóstico de 7 días"):
+  `Pronóstico por horas · {día}` donde `{día}` es `hoy` para el índice 0 y, si
+  no, día de la semana largo + número en es-ES (`jueves 17`). El encabezado es
+  el indicador **textual** del día seleccionado (complementa al estado visual
+  de la tarjeta, §8.5) y se actualiza al cambiar de día.
+- Tarjeta contenedora estándar:
+  `rounded-2xl border border-line bg-surface-raised p-4 shadow-sm sm:p-6`.
+- La sección entra en el `space-y-6` existente de `WeatherPanel`; no cambia
+  nada del layout de la Parte I.
+
+### 8.3 Composición del chart
+
+Contenedor del gráfico dentro de la tarjeta: `h-56 md:h-64` (224 px móvil /
+256 px en `md:` — altura fija para que el skeleton reserve exactamente lo
+mismo y no haya layout shift). `ResponsiveContainer width="100%" height="100%"`.
+
+| Elemento | Especificación |
+|---|---|
+| `CartesianGrid` | Solo líneas horizontales (`vertical={false}`), `stroke="var(--color-line)"`, `strokeDasharray="3 3"` |
+| `Line` (temperatura) | `type="monotone"`, `stroke="var(--color-chart-temp)"`, `strokeWidth={2}`, `dot={false}`, `activeDot={{ r: 4 }}`, eje Y izquierdo. Los `null` se dejan como huecos (`connectNulls={false}`) |
+| `Bar` (precipitación) | `fill="var(--color-brand)"`, `fillOpacity={0.5}`, `radius={[2, 2, 0, 0]}`, eje Y derecho, dominio `[0, 'auto']` |
+| `XAxis` | `dataKey="hourLabel"`, ticks cada 3 h (`interval={2}`), `tickFormatter` que recorta a la hora (`"14:00"` → `"14"`) para que quepan en 320 px; `tick={{ fill: 'var(--color-ink-muted)', fontSize: 12 }}`, `axisLine={{ stroke: 'var(--color-line)' }}`, `tickLine={false}` |
+| `YAxis` ×2 | Izquierdo (°C): `tickFormatter` `` `${v}°` ``; derecho (mm): `orientation="right"`. Ambos: `tick` como el XAxis, `axisLine={false}`, `tickLine={false}`, `width={32}` |
+| `Tooltip` | `content={<HourlyChartTooltip />}` (§8.4), `cursor={{ stroke: 'var(--color-line)' }}` |
+
+**Leyenda** (obligatoria: hay dos series y dos ejes) — fila propia bajo el
+gráfico, no la `<Legend />` de recharts:
+`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted`.
+Cada ítem: swatch + etiqueta:
+
+- Temperatura: `size-2.5 rounded-full bg-chart-temp` (punto = línea) + `Temperatura (°C)`
+- Precipitación: `size-2.5 rounded-xs bg-brand/50` (cuadrado = barra) + `Precipitación (mm)`
+
+La forma del swatch replica la forma de la serie: el color no es el único
+diferenciador tampoco en la leyenda.
+
+**Accesibilidad**: el `accessibilityLayer` de recharts v3 queda activado (por
+defecto): el gráfico es enfocable y las flechas mueven el cursor/tooltip. El
+wrapper del chart lleva `role="img"` implícito de recharts más
+`aria-label="Gráfico de temperatura y precipitación por horas"`. El foco usa
+el estilo global (§2). En `prefers-reduced-motion` no hay nada que apagar (el
+chart no anima entradas; `isAnimationActive={false}` en `Line` y `Bar` para
+evitar la animación de montaje de recharts — menos movimiento y tests más
+estables).
+
+### 8.4 Tooltip (`HourlyChartTooltip`)
+
+Mini-tarjeta flotante, misma familia visual que el dropdown de búsqueda:
+`rounded-lg border border-line bg-surface-raised px-3 py-2 shadow-lg`.
+
+Contenido (formatos de `lib/format.ts`, es-ES):
+
+1. **Hora** — `text-xs font-semibold text-ink tabular-nums`: `14:00`
+   (el `hourLabel` completo; el eje X muestra solo `14`, el tooltip da la
+   forma completa).
+2. **Filas de datos** — una por métrica, `flex items-center gap-1.5 text-xs
+   text-ink-muted`, valor en `font-medium text-ink tabular-nums`:
+   - `● Temperatura: 23°` — dot `size-2 rounded-full bg-chart-temp`, entero redondeado.
+   - `▪ Precipitación: 1,2 mm` — dot `size-2 rounded-xs bg-brand/50`, un
+     decimal con coma es-ES; `0 mm` cuando es cero.
+   - `Prob. de lluvia: 40 %` — sin dot (no se dibuja como serie), entero.
+
+Una métrica `null` omite su fila. Si todas son `null` en ese punto, el tooltip
+no se renderiza.
+
+### 8.5 Día seleccionado en `ForecastList`
+
+`ForecastDayCard` pasa de `<li>` plano a `<li>` con un `<button type="button">`
+que ocupa toda la tarjeta (ARCHITECTURE §10.3). El botón absorbe las clases
+visuales de la tarjeta actual:
+
+- **Reposo**: `flex w-full cursor-pointer items-center gap-3 rounded-2xl
+  border border-line bg-surface-raised px-4 py-3 text-left transition-colors
+  md:flex-col md:gap-1 md:px-2 md:py-4 md:text-center` (idéntica a la tarjeta
+  del MVP; el contenido interno no cambia). Altura de fila ≥48 px en móvil:
+  objetivo táctil correcto.
+- **Hover**: `hover:bg-brand-soft` (mismo patrón que los chips de favoritas).
+- **Focus**: estilo global `:focus-visible` (§2), nada extra.
+- **Seleccionado** (`aria-pressed="true"`): `border-brand bg-brand-soft` y el
+  nombre del día en `font-semibold` — mismo lenguaje visual que el chip de
+  favorita activa (§4.4), así "elemento activo" se ve igual en toda la app.
+  El estado no depende solo del color: `aria-pressed` lo expone
+  programáticamente y el encabezado del bloque horario (§8.2) lo repite en
+  texto visible.
+- **Deshabilitado / cargando**: no existen — los 7 días ya están en memoria;
+  cambiar de día es instantáneo y sin spinner.
+
+Contenedor `<ul>`: añade `role="group"` +
+`aria-label="Selecciona un día para ver el detalle por horas"`.
+
+### 8.6 Estados del bloque horario
+
+| Estado | UI |
+|---|---|
+| Chunk lazy cargando (`Suspense`) | Skeleton: el encabezado de sección real + bloque `h-56 animate-pulse rounded-2xl bg-surface-sunken motion-reduce:animate-none md:h-64`, envuelto en `role="status"` con `sr-only` `Cargando el gráfico…`. Misma altura que el chart: cero layout shift |
+| Primera carga del clima (`isPending`) | El `WeatherSkeleton` existente (§4.6) se extiende con ese mismo bloque al final |
+| Día sin datos horarios (`points.length === 0` o todo `null`) | Variante compacta del `EmptyState`: `rounded-2xl border border-dashed border-line px-6 py-8 text-center` + mensaje `text-sm text-ink-muted` `Sin datos horarios para este día` (sin icono; py-8 en vez de py-12: es un hueco de sección, no de página) |
+| Cambio de día | Encabezado y gráfico se actualizan de inmediato; sin spinner |
+
+### 8.7 Responsive
+
+- **Móvil (base)**: chart `h-56`, ticks del eje X cada 3 h abreviados (`00`,
+  `03`, … `21`), ejes Y compactos (`width={32}`). El tooltip de recharts se
+  reposiciona solo dentro del contenedor; con `accessibilityLayer` también
+  funciona por teclado y toque.
+- **`md:` (≥768 px)**: solo cambia la altura (`md:h-64`). Mismos ticks — más
+  densidad no aporta lectura y mantiene un solo comportamiento que testear.
+- El ancho lo gobierna el `max-w-3xl` de la página; `ResponsiveContainer`
+  hace el resto.
+
+---
+
+## 9. Geolocalización
+
+### 9.1 `GeolocationBanner` — ubicación y anatomía
+
+Se renderiza en `App` **entre la búsqueda y las favoritas**: igual que los
+chips, es una vía alternativa de selección y pertenece junto al input. Es una
+fila ligera, **no** una tarjeta ni un modal — nunca bloquea el flujo de
+búsqueda manual. Ocupa el hueco de una fila (`min-h-10`) mientras exista, y
+desaparece del layout en `granted`/`unsupported`.
+
+Estados (máquina de ARCHITECTURE §11.2):
+
+| `status` | UI |
+|---|---|
+| `unsupported` | No se renderiza nada (la búsqueda es el flujo normal; no se anuncia una carencia del navegador). |
+| `idle` | Botón secundario con icono de ubicación: `inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-line bg-surface-raised px-4 text-sm font-medium text-brand transition-colors hover:bg-brand-soft` — icono pin `size-5` (`aria-hidden`), etiqueta `Usar mi ubicación`. Mismo lenguaje de chip que las favoritas: se lee como "otra forma de elegir ubicación". Hover/focus/activo como los chips; focus con el outline global. |
+| `requesting` | El mismo botón, deshabilitado: `disabled:opacity-60 disabled:pointer-events-none`, el icono se sustituye por el `Spinner` (§4.6) a `size-4`, etiqueta `Obteniendo tu ubicación…`. El wrapper lleva `role="status"` (anuncia el cambio a lectores de pantalla). |
+| `denied` | Fila informativa, tono neutro (no es un error de la app): `flex items-center gap-2 rounded-lg bg-surface-sunken px-3 py-2 text-sm text-ink-muted` — icono de info `size-5 shrink-0` (`aria-hidden`) + texto `Permiso de ubicación denegado. Puedes buscar tu ciudad manualmente.` + botón de descarte al final (`ml-auto`): `inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-brand-soft` con icono × `size-4` y `aria-label="Descartar aviso"`. Sin botón de reintento: el permiso se gestiona en el navegador. Descartar oculta la fila para la sesión (estado local). |
+| `error` | Misma fila neutra que `denied`, texto `No se pudo obtener tu ubicación.` + botón fantasma `Reintentar`: `h-10 shrink-0 cursor-pointer rounded-lg px-3 text-sm font-medium text-brand transition-colors hover:bg-brand-soft` → `requestLocation()`. (Fantasma y no sólido: el sólido queda reservado al error de datos de §4.7.) |
+| `granted` | El banner desaparece; el panel muestra "Tu ubicación" (§9.3). |
+
+Redacción: informativa y sin culpar ("Permiso de ubicación denegado…" en vez
+de "Has denegado…"); nunca sugiere que la app esté rota, y siempre deja claro
+el camino manual.
+
+### 9.2 Icono de ubicación
+
+Nuevo glifo en el set de iconos de UI, misma guía de estilo que §5.1
+(`viewBox 24`, `stroke-width 1.75`, `currentColor`): **pin de mapa** —
+contorno de gota invertida + círculo interior r=2.5. Se usa en el botón del
+banner y junto al encabezado "Tu ubicación". Siempre `aria-hidden="true"`.
+
+### 9.3 "Tu ubicación" en `CurrentWeatherCard`
+
+Cuando la ubicación seleccionada viene de geolocalización
+(`SelectedLocation.city === undefined`):
+
+- **Encabezado**: icono pin `size-5 text-brand` (`aria-hidden`) + `Tu ubicación`
+  en el estilo de nombre de ciudad (`text-xl font-semibold`), alineados con
+  `inline-flex items-center gap-1.5`. El pin es la marca visual de "esto es tu
+  posición, no una ciudad buscada".
+- **Sin sublínea** `admin1 · country` (no hay reverse geocoding —
+  ARCHITECTURE §11.3); la etiqueta de condición sube a ocupar su lugar. No se
+  muestran coordenadas crudas: ruido sin valor para el usuario.
+- **Sin `FavoriteToggleButton`**: la ubicación actual **no es favoritable**
+  (sin id estable). La estrella no se renderiza deshabilitada ni con tooltip:
+  simplemente no existe, y la fila de cabecera conserva su
+  `justify-between` sin hueco fantasma (el indicador de refetch sigue
+  funcionando igual). Un control deshabilitado invitaría a preguntarse "¿por
+  qué no puedo?"; su ausencia comunica que aquí no aplica.
+
+Todo lo demás (fila hero, métricas, skeleton, error) es idéntico: el clima de
+"Tu ubicación" es un clima más.
+
+---
+
+## 10. PWA
+
+### 10.1 `OfflineBanner`
+
+Franja informativa global, renderizada por `App` **fuera del contenedor
+`max-w-3xl` y por encima del header**, a ancho completo:
+
+- Clases: `sticky top-0 z-20 border-b border-line bg-surface-sunken px-4 py-2
+  text-center text-sm text-ink` + `role="status"`.
+- Contenido: icono nube tachada `size-4` inline (`aria-hidden`, mismo estilo
+  §5.1) + `Sin conexión. Se muestran los últimos datos disponibles.`
+- Color **neutro** (`surface-sunken`), no `danger`: estar offline no es un
+  error de la app — los datos cacheados siguen siendo válidos y el copy lo
+  dice. El rojo queda reservado para fallos reales (si además no hay caché,
+  el `ErrorMessage` de §4.7 aparece debajo con su propio tratamiento).
+  Contraste `ink` sobre `surface-sunken`: 14.5:1 claro / 9.4:1 oscuro.
+- `sticky` y no `fixed`: empuja el contenido en vez de taparlo (sin necesidad
+  de compensar con padding) y permanece visible al hacer scroll.
+- Aparece cuando `useOnlineStatus()` es `false` y desaparece al reconectar,
+  sin animación de entrada/salida (coherente con §1.5: sin animaciones de
+  entrada).
+
+### 10.2 Manifest: valores visuales finales
+
+Valores que rellenan los huecos de ARCHITECTURE §12.2:
+
+| Clave | Valor | Justificación |
+|---|---|---|
+| `theme_color` | `#0284c7` | `brand` claro: barra de título de la app instalada en azul de marca (texto del sistema en blanco: 4.1:1, suficiente para el texto grande de la barra). |
+| `background_color` | `#0f172a` | `surface` oscuro: color del splash de arranque. El manifest no soporta `light-dark()`; se elige el fondo oscuro (mal menor: un destello claro en un entorno oscuro molesta más que lo inverso, y el icono de marca contrasta 4.3:1 sobre él). |
+
+`index.html` añade además dos metas `theme-color` con media query (esto sí
+puede seguir al sistema, a diferencia del manifest) y el icono de iOS:
+
+```html
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1f5f9" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+```
+
+(En el navegador, la UI se tiñe del color de `surface` del modo activo; el
+azul de marca queda para la ventana de la app instalada vía manifest.)
+
+### 10.3 Iconos PWA (entregados en `public/`)
+
+Diseño: el glifo de sol del favicon (§5.2 — círculo relleno r=4 + 8 rayos,
+espacio de 24 unidades) en **blanco** sobre fondo **brand `#0284c7`** (blanco
+sobre sky-600: 4.1:1, ≥3:1 de gráfico). Mismo dibujo exacto que `favicon.svg`,
+así el icono de
+pestaña, el de instalación y el splash cuentan la misma marca.
+
+| Archivo | Tamaño | Geometría |
+|---|---|---|
+| `pwa-192x192.png` | 192 | Fondo cuadrado redondeado (radio 20 %, esquinas transparentes), glifo centrado con radio exterior al 33 % del lienzo. |
+| `pwa-512x512.png` | 512 | Ídem a 512 px. |
+| `pwa-maskable-512x512.png` | 512 | Fondo **a sangre completa** (sin transparencia); glifo al 36 % del lienzo — dentro de la zona segura maskable (radio 40 %), sobrevive a cualquier máscara (círculo, squircle). |
+| `apple-touch-icon.png` | 180 | A sangre completa (iOS aplica su propia máscara), glifo al 36 %. |
+
+Los cuatro PNG están generados y commiteados en `public/`; si hubiera que
+regenerarlos (p. ej. cambio de marca), la especificación de esta tabla es la
+fuente: sol del favicon en blanco, fondo `#0284c7`, proporciones indicadas.
+
+---
+
+## 11. Referencia de copy v2 (cadenas finales en español)
+
+| Contexto | Cadena |
+|---|---|
+| Encabezado del bloque horario | `Pronóstico por horas · hoy` / `Pronóstico por horas · {jueves 17}` |
+| Etiqueta del gráfico (aria) | `Gráfico de temperatura y precipitación por horas` |
+| Leyenda del gráfico | `Temperatura (°C)` / `Precipitación (mm)` |
+| Tooltip del gráfico | `Temperatura: {23}°` / `Precipitación: {1,2} mm` / `Prob. de lluvia: {40} %` |
+| Grupo de días (aria) | `Selecciona un día para ver el detalle por horas` |
+| Sin datos horarios | `Sin datos horarios para este día` |
+| Cargando el gráfico (sr-only) | `Cargando el gráfico…` |
+| Botón de geolocalización | `Usar mi ubicación` |
+| Solicitando ubicación | `Obteniendo tu ubicación…` |
+| Permiso denegado | `Permiso de ubicación denegado. Puedes buscar tu ciudad manualmente.` |
+| Error de geolocalización | `No se pudo obtener tu ubicación.` |
+| Reintentar geolocalización | `Reintentar` |
+| Descartar aviso (aria) | `Descartar aviso` |
+| Encabezado de ubicación actual | `Tu ubicación` |
+| Banner offline | `Sin conexión. Se muestran los últimos datos disponibles.` |
+| Nombre de la app instalada | `Clima — Pronóstico del tiempo` (short name: `Clima`) |
+| Descripción del manifest | `Clima actual y pronóstico de 7 días con Open-Meteo` |
