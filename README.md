@@ -14,7 +14,8 @@ backend propio, sin API keys y sin secretos.
 
 ## Demo
 
-<!-- TODO: reemplazar con la URL real una vez publicado en GitHub Pages -->
+**https://nicolasandraderetamal.github.io/clima-react/**
+
 Despliegue automático en GitHub Pages en cada push a `main`
 (ver [Despliegue](#despliegue)).
 
