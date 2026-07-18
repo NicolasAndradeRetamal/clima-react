@@ -2,7 +2,7 @@
 
 Aplicación de clima. Proyecto de portafolio, **frontend-only**: React + TypeScript
 consumiendo las APIs públicas de Open-Meteo (sin API key, sin backend propio).
-Este documento es el contrato para el agente frontend: estructura de carpetas,
+Este documento es el contrato de implementación del frontend: estructura de carpetas,
 versiones de dependencias, contrato de la API, diseño de hooks, manejo de estados
 de UI, testing y despliegue.
 
@@ -11,7 +11,7 @@ construido y desplegado; la **Parte II** (§9–§13) define el alcance v2
 (gráfico horario, geolocalización, PWA). Los puntos de la Parte I que v2
 modifica están marcados con comentarios `v2 (§n)`.
 
-Convenciones (de CLAUDE.md, no negociables):
+Convenciones (no negociables):
 
 - Código, identificadores y comentarios en **inglés**; todos los textos de UI en **español**.
 - TypeScript estricto; toda respuesta de la API está tipada.
@@ -53,10 +53,8 @@ Las entradas marcadas `# v2` son nuevas en el alcance v2 (§9–§13).
 
 ```
 clima-react/
-├── CLAUDE.md
 ├── ARCHITECTURE.md          # this file
-├── DESIGN.md                # produced by the designer agent
-├── QA_REPORT.md             # produced by the QA agent
+├── DESIGN.md                # visual identity and UX spec
 ├── README.md
 ├── index.html               # v2: theme-color meta + apple-touch-icon link (§12.2)
 ├── package.json

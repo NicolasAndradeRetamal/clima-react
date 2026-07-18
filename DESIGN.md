@@ -1,7 +1,7 @@
 # DESIGN — clima-react
 
 Identidad visual y especificación de UX de la aplicación de clima. Este
-documento es el contrato para el agente frontend: tokens de diseño (`@theme` de
+documento es el contrato de implementación de la UI: tokens de diseño (`@theme` de
 Tailwind CSS v4), layout, especificaciones de componentes, set de iconos y
 reglas de accesibilidad.
 
